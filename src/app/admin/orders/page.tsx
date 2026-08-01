@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useOrderStore, Order } from "@/store/useOrderStore";
+import { echo } from "@/lib/echo";
 
 export default function OrdersPage() {
-  const { orders, updateOrderStatus } = useOrderStore();
+  const { orders, updateOrderStatus, fetchOrders } = useOrderStore();
   const [search, setSearch] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
@@ -21,6 +22,22 @@ export default function OrdersPage() {
       default: return "bg-gray-100 text-gray-700";
     }
   };
+
+  useEffect(() => {
+    fetchOrders();
+
+    if (echo) {
+      const channel = echo.channel('orders');
+      channel.listen('OrderPaid', (e: any) => {
+        // Refresh orders when a payment is successful
+        fetchOrders();
+      });
+
+      return () => {
+        channel.stopListening('OrderPaid');
+      };
+    }
+  }, [fetchOrders]);
 
   const filteredOrders = orders.filter(order => 
     order.id.toLowerCase().includes(search.toLowerCase()) || 

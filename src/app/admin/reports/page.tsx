@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useOrderStore } from "@/store/useOrderStore";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
@@ -8,7 +9,11 @@ import {
 import { DollarSign, ShoppingBag, TrendingUp } from "lucide-react";
 
 export default function ReportsPage() {
-  const { orders } = useOrderStore();
+  const { orders, fetchOrders } = useOrderStore();
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
 
   // 1. Calculate Summary Stats
   const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0);

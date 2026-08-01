@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCartStore } from "@/store/useCartStore";
 import { useMenuStore } from "@/store/useMenuStore";
 
 export default function MenuPage() {
-  const { categories, products } = useMenuStore();
+  const { categories, products, fetchMenus } = useMenuStore();
   const [activeCategory, setActiveCategory] = useState("Rekomendasi");
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [qty, setQty] = useState(1);
@@ -14,8 +14,12 @@ export default function MenuPage() {
   
   const addItem = useCartStore((state) => state.addItem);
 
+  useEffect(() => {
+    fetchMenus();
+  }, [fetchMenus]);
+
   const filteredProducts = activeCategory === "Rekomendasi"
-    ? products.filter(p => p.bestSeller && p.visible)
+    ? products.filter(p => p.best_seller && p.visible)
     : products.filter(p => p.category === activeCategory && p.visible);
 
   const handleOpenDetail = (product: any) => {
@@ -79,7 +83,7 @@ export default function MenuPage() {
             >
               <div className="relative h-64 w-full bg-gray-200">
                 <img src={product.img} alt={product.name} className="w-full h-full object-cover" />
-                {product.bestSeller && (
+                {product.best_seller && (
                   <div className="absolute top-4 left-4 bg-[#E53935] text-white px-4 py-1 rounded-full text-sm font-bold shadow-md">
                     Terlaris
                   </div>

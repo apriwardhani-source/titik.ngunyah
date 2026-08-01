@@ -1,11 +1,17 @@
 "use client";
 
+import { useEffect } from "react";
 import { DollarSign, ShoppingBag, Clock, CheckCircle2 } from "lucide-react";
 import { useOrderStore } from "@/store/useOrderStore";
 import Link from "next/link";
 
 export default function AdminDashboard() {
-  const { orders } = useOrderStore();
+  const { orders, fetchOrders } = useOrderStore();
+  
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
+
   const recentOrders = orders.slice(0, 5); // Take the latest 5 orders
   
   // Calculate dynamic stats

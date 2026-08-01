@@ -1,11 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMenuStore, Product, Category } from "@/store/useMenuStore";
 
 export default function MenuManagementPage() {
   const [activeTab, setActiveTab] = useState<"menu" | "category">("menu");
-  const { categories, products, addCategory, updateCategory, deleteCategory, addProduct, updateProduct, deleteProduct } = useMenuStore();
+  const { categories, products, addCategory, updateCategory, deleteCategory, addProduct, updateProduct, deleteProduct, fetchMenus } = useMenuStore();
+
+  useEffect(() => {
+    fetchMenus(true); // Fetch all menus including hidden ones for admin
+  }, [fetchMenus]);
 
   // Modal States
   const [isMenuModalOpen, setIsMenuModalOpen] = useState(false);
@@ -95,12 +99,12 @@ export default function MenuManagementPage() {
     }
   };
 
-  const saveMenu = () => {
+  const saveMenu = async () => {
     if (!menuForm.name || !menuForm.category) return alert("Nama dan kategori wajib diisi");
     if (editMenuId) {
-      updateProduct(editMenuId, menuForm);
+      await updateProduct(editMenuId, menuForm);
     } else {
-      addProduct({ ...menuForm, id: Date.now().toString() });
+      await addProduct(menuForm); // Backend generates ID
     }
     setIsMenuModalOpen(false);
   };
