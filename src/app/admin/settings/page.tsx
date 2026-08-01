@@ -10,7 +10,7 @@ export default function SettingsPage() {
       </div>
       <h2 className="text-3xl font-bold text-gray-900 mb-2">Pengaturan Sistem</h2>
       <p className="text-gray-500 text-lg max-w-md">
-        Fitur ini sedang dalam tahap pengembangan. Nantinya Anda dapat mengubah pengaturan jam operasional, pajak, dan profil toko di sini.
+        belum ges ini nanti isinya supaya bisa untuk mengubah pengaturan jam operasional, pajak, dan profil toko di sini.
       </p>
     </div>
   );
