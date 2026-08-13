@@ -3,34 +3,20 @@
 import { useCartStore } from "@/store/useCartStore";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { formatPrice } from "@/lib/utils";
 
 export default function FloatingCart() {
   const pathname = usePathname();
   const router = useRouter();
   const { getTotalItems, getTotalPrice } = useCartStore();
 
-  // Hide cart on specific pages
-  const hiddenPages = ["/", "/admin", "/admin/orders", "/admin/menu", "/admin/reports", "/cart", "/payment", "/queue"];
-  if (hiddenPages.some(page => pathname?.startsWith(page) && page !== "/menu") && pathname !== "/menu") {
-      // Actually we just want it to be visible on /menu maybe.
-      // Let's explicitly define allowed pages.
-  }
-
-  // A safer check: only show on /menu
+  // Only show floating cart on /menu page
   if (pathname !== "/menu") return null;
 
   const totalItems = getTotalItems();
   const totalPrice = getTotalPrice();
 
   if (totalItems === 0) return null;
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      maximumFractionDigits: 0,
-    }).format(price);
-  };
 
   return (
     <AnimatePresence>

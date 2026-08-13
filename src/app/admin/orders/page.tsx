@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useOrderStore, Order } from "@/store/useOrderStore";
 import { echo } from "@/lib/echo";
+import { getStatusColor } from "@/lib/utils";
 
 export default function OrdersPage() {
   const { orders, updateOrderStatus, fetchOrders } = useOrderStore();
@@ -11,24 +12,12 @@ export default function OrdersPage() {
 
   const statuses = ["Menunggu", "Dibayar", "Disiapkan", "Siap", "Selesai", "Dibatalkan"];
 
-  const getStatusColor = (status: string) => {
-    switch(status) {
-      case "Menunggu": return "bg-orange-100 text-orange-700 border-orange-200";
-      case "Dibayar": return "bg-yellow-100 text-yellow-700 border-yellow-200";
-      case "Disiapkan": return "bg-blue-100 text-blue-700 border-blue-200";
-      case "Siap": return "bg-green-100 text-green-700 border-green-200";
-      case "Selesai": return "bg-gray-100 text-gray-700 border-gray-200";
-      case "Dibatalkan": return "bg-red-100 text-red-700 border-red-200";
-      default: return "bg-gray-100 text-gray-700";
-    }
-  };
-
   useEffect(() => {
     fetchOrders();
 
     if (echo) {
       const channel = echo.channel('orders');
-      channel.listen('OrderPaid', (e: any) => {
+      channel.listen('OrderPaid', () => {
         // Refresh orders when a payment is successful
         fetchOrders();
       });

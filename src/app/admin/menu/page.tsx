@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useMenuStore, Product, Category } from "@/store/useMenuStore";
+import { formatPrice } from "@/lib/utils";
 
 export default function MenuManagementPage() {
   const [activeTab, setActiveTab] = useState<"menu" | "category">("menu");
@@ -19,15 +20,15 @@ export default function MenuManagementPage() {
   const [editCategoryId, setEditCategoryId] = useState<string | null>(null);
   const [categoryName, setCategoryName] = useState("");
 
-  // Form States - Menu
-  const [editMenuId, setEditMenuId] = useState<string | null>(null);
+  // Form States - Menu (using snake_case to match API/Product type)
+  const [editMenuId, setEditMenuId] = useState<string | number | null>(null);
   const [menuForm, setMenuForm] = useState({
     name: "",
     category: "",
     price: 0,
     desc: "",
     img: "/photos/default.png",
-    bestSeller: false,
+    best_seller: false,
     visible: true,
   });
   const [uploading, setUploading] = useState(false);
@@ -58,7 +59,15 @@ export default function MenuManagementPage() {
   const openMenuModal = (product?: Product) => {
     if (product) {
       setEditMenuId(product.id);
-      setMenuForm(product);
+      setMenuForm({
+        name: product.name,
+        category: product.category,
+        price: product.price,
+        desc: product.desc || "",
+        img: product.img,
+        best_seller: product.best_seller,
+        visible: product.visible,
+      });
     } else {
       setEditMenuId(null);
       setMenuForm({
@@ -67,7 +76,7 @@ export default function MenuManagementPage() {
         price: 0,
         desc: "",
         img: "/photos/default.png",
-        bestSeller: false,
+        best_seller: false,
         visible: true,
       });
     }
@@ -77,6 +86,17 @@ export default function MenuManagementPage() {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Validate file type and size
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!allowedTypes.includes(file.type)) {
+      alert("Format file tidak didukung. Gunakan JPEG, PNG, WebP, atau GIF.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Ukuran file maks 5MB.");
+      return;
+    }
 
     setUploading(true);
     const formData = new FormData();
@@ -93,7 +113,7 @@ export default function MenuManagementPage() {
       }
     } catch (error) {
       console.error("Upload failed", error);
-      alert("Failed to upload image");
+      alert("Gagal mengunggah gambar");
     } finally {
       setUploading(false);
     }
@@ -164,10 +184,10 @@ export default function MenuManagementPage() {
                     <td className="px-6 py-4 font-bold text-gray-900">{menu.name}</td>
                     <td className="px-6 py-4 text-gray-600">{menu.category}</td>
                     <td className="px-6 py-4 font-medium text-gray-900">
-                      {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(menu.price)}
+                      {formatPrice(menu.price)}
                     </td>
                     <td className="px-6 py-4">
-                      {menu.bestSeller && <span className="bg-red-100 text-red-700 px-2 py-1 rounded-md text-xs font-bold mr-2">Terlaris</span>}
+                      {menu.best_seller && <span className="bg-red-100 text-red-700 px-2 py-1 rounded-md text-xs font-bold mr-2">Terlaris</span>}
                     </td>
                     <td className="px-6 py-4">
                       <label className="relative inline-flex items-center cursor-pointer">
@@ -245,7 +265,7 @@ export default function MenuManagementPage() {
                 <div className="flex items-center gap-4">
                   <img src={menuForm.img} alt="Preview" className="w-24 h-24 object-cover rounded-lg border" />
                   <div className="flex-1">
-                    <input type="file" accept="image/*" onChange={handleFileUpload} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100" />
+                    <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleFileUpload} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100" />
                     {uploading && <p className="text-sm text-blue-500 mt-2">Mengunggah...</p>}
                   </div>
                 </div>
@@ -276,7 +296,7 @@ export default function MenuManagementPage() {
 
               <div className="flex gap-6 pt-2">
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={menuForm.bestSeller} onChange={e => setMenuForm({...menuForm, bestSeller: e.target.checked})} className="w-5 h-5 text-red-600 rounded focus:ring-red-500" />
+                  <input type="checkbox" checked={menuForm.best_seller} onChange={e => setMenuForm({...menuForm, best_seller: e.target.checked})} className="w-5 h-5 text-red-600 rounded focus:ring-red-500" />
                   <span className="font-bold text-gray-700">Terlaris</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">

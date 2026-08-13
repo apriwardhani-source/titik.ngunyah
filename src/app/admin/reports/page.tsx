@@ -7,6 +7,7 @@ import {
   LineChart, Line 
 } from "recharts";
 import { DollarSign, ShoppingBag, TrendingUp } from "lucide-react";
+import { formatPrice } from "@/lib/utils";
 
 export default function ReportsPage() {
   const { orders, fetchOrders } = useOrderStore();
@@ -19,10 +20,6 @@ export default function ReportsPage() {
   const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0);
   const totalOrders = orders.length;
   const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(price);
-  };
 
   // 2. Parse Items for Top Selling Chart
   const itemCounts: Record<string, number> = {};
@@ -110,7 +107,7 @@ export default function ReportsPage() {
                   tickFormatter={(value) => `Rp ${value/1000}k`}
                 />
                 <Tooltip 
-                  formatter={(value: number) => formatPrice(value)}
+                  formatter={(value) => formatPrice(Number(value))}
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                 />
                 <Line type="monotone" dataKey="pendapatan" stroke="#E53935" strokeWidth={4} dot={{r: 6, fill: '#E53935', strokeWidth: 2, stroke: 'white'}} activeDot={{r: 8}} />

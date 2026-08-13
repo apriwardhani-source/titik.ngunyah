@@ -3,12 +3,13 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCartStore } from "@/store/useCartStore";
-import { useMenuStore } from "@/store/useMenuStore";
+import { useMenuStore, Product } from "@/store/useMenuStore";
+import { formatPrice } from "@/lib/utils";
 
 export default function MenuPage() {
   const { categories, products, fetchMenus } = useMenuStore();
   const [activeCategory, setActiveCategory] = useState("Rekomendasi");
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [qty, setQty] = useState(1);
   const [notes, setNotes] = useState("");
   
@@ -22,7 +23,7 @@ export default function MenuPage() {
     ? products.filter(p => p.best_seller && p.visible)
     : products.filter(p => p.category === activeCategory && p.visible);
 
-  const handleOpenDetail = (product: any) => {
+  const handleOpenDetail = (product: Product) => {
     setSelectedProduct(product);
     setQty(1);
     setNotes("");
@@ -31,7 +32,7 @@ export default function MenuPage() {
   const handleAddToCart = () => {
     if (!selectedProduct) return;
     addItem({
-      id: selectedProduct.id,
+      id: String(selectedProduct.id),
       name: selectedProduct.name,
       price: selectedProduct.price,
       quantity: qty,
@@ -39,10 +40,6 @@ export default function MenuPage() {
       notes: notes
     });
     setSelectedProduct(null);
-  };
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(price);
   };
 
   return (

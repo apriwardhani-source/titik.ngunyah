@@ -1,24 +1,23 @@
 import axios from "axios";
+import { getApiUrl } from "./utils";
 
 // Base API Configuration for Laravel Backend
 export const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api",
+  baseURL: getApiUrl(),
   headers: {
     "Content-Type": "application/json",
     "Accept": "application/json",
   },
 });
 
-// Example API Service methods
+// API Service methods
 export const menuService = {
-  getCategories: () => api.get("/categories"),
-  getMenus: (categoryId?: string) => api.get("/menus", { params: { category_id: categoryId } }),
+  getMenus: (isAdmin?: boolean) => api.get("/menus", { params: isAdmin ? { admin: true } : {} }),
 };
 
 export const orderService = {
-  createOrder: (data: any) => api.post("/orders", data),
-  getOrderStatus: (queueNumber: string) => api.get(`/orders/${queueNumber}/status`),
-  // Admin methods
-  getAllOrders: () => api.get("/admin/orders"),
-  updateOrderStatus: (id: string, status: string) => api.patch(`/admin/orders/${id}/status`, { status }),
+  createOrder: (data: { items: Array<{ menu_id: string | number; qty: number; notes?: string }>; customer_name?: string; payment_method?: string }) => 
+    api.post("/checkout", data),
+  getAllOrders: () => api.get("/orders"),
+  updateOrderStatus: (id: number, status: string) => api.put(`/orders/${id}/status`, { status }),
 };

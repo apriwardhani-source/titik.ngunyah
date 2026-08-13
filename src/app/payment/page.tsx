@@ -6,56 +6,69 @@ import { useCartStore } from "@/store/useCartStore";
 import { useOrderStore } from "@/store/useOrderStore";
 import { motion, AnimatePresence } from "framer-motion";
 import { echo } from "@/lib/echo";
+import { formatPrice, getApiUrl } from "@/lib/utils";
 
 export default function PaymentPage() {
   const router = useRouter();
   const { getTotalPrice, clearCart, items } = useCartStore();
-  const { addOrder, orders } = useOrderStore();
+  const { fetchOrders } = useOrderStore();
   const [method, setMethod] = useState<"qris" | "cash" | null>(null);
   const [timer, setTimer] = useState(300);
   const [qrUrl, setQrUrl] = useState<string | null>(null);
   const [loadingQr, setLoadingQr] = useState(false);
+  const [loadingCash, setLoadingCash] = useState(false);
   const [currentOrderNumber, setCurrentOrderNumber] = useState<string | null>(null);
   const [queueNumber, setQueueNumber] = useState<string | null>(null);
+  const [timerExpired, setTimerExpired] = useState(false);
 
   const total = getTotalPrice();
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(price);
-  };
+  // Handle cash order — POST to backend checkout, then redirect
+  const handleCashOrder = async () => {
+    setLoadingCash(true);
+    try {
+      const payload = {
+        items: items.map(item => ({
+          menu_id: item.id,
+          qty: item.quantity,
+          notes: item.notes
+        })),
+        customer_name: "Guest",
+        payment_method: "cash"
+      };
 
-  const handleSuccess = () => {
-    const todayOrders = orders.filter(o => new Date(o.createdAt).toDateString() === new Date().toDateString());
-    const queueNo = `A-${(todayOrders.length + 1).toString().padStart(3, '0')}`;
-    
-    const itemsSummary = items.map(item => `${item.quantity}x ${item.name}`).join(", ");
-    
-    addOrder({
-      id: queueNo,
-      customer: "Guest",
-      items: itemsSummary,
-      total: total,
-      formattedTotal: formatPrice(total),
-      payment: method === "qris" ? "QRIS" : "Tunai",
-      status: method === "qris" ? "Dibayar" : "Menunggu",
-      time: new Date().toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' }),
-      createdAt: Date.now()
-    });
+      const res = await fetch(`${getApiUrl()}/checkout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
 
-    clearCart();
-    router.push(`/queue?id=${queueNo}`);
+      if (data.status === 'success') {
+        clearCart();
+        fetchOrders();
+        router.push(`/queue?id=${data.data.queue_number}`);
+      } else {
+        alert("Gagal membuat pesanan: " + (data.message || "Unknown error"));
+      }
+    } catch (error) {
+      console.error("Failed to create cash order", error);
+      alert("Gagal membuat pesanan. Pastikan server backend aktif.");
+    } finally {
+      setLoadingCash(false);
+    }
   };
 
   const handleQrisSelect = async () => {
     setMethod("qris");
     setTimer(300);
+    setTimerExpired(false);
     setLoadingQr(true);
     setQrUrl(null);
     setCurrentOrderNumber(null);
     setQueueNumber(null);
     
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
       const payload = {
         items: items.map(item => ({
           menu_id: item.id,
@@ -65,7 +78,7 @@ export default function PaymentPage() {
         customer_name: "Guest"
       };
 
-      const res = await fetch(`${apiUrl}/checkout`, {
+      const res = await fetch(`${getApiUrl()}/checkout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -84,18 +97,25 @@ export default function PaymentPage() {
     }
   };
 
+  // QRIS countdown timer
   useEffect(() => {
-    let interval: any;
-    if (method === "qris" && timer > 0) {
+    let interval: ReturnType<typeof setInterval>;
+    if (method === "qris" && timer > 0 && !timerExpired) {
       interval = setInterval(() => {
-        setTimer((prev) => prev - 1);
+        setTimer((prev) => {
+          if (prev <= 1) {
+            setTimerExpired(true);
+            return 0;
+          }
+          return prev - 1;
+        });
       }, 1000);
     }
     
     return () => clearInterval(interval);
-  }, [method, timer]);
+  }, [method, timer, timerExpired]);
 
-  // WebSocket Listener
+  // WebSocket Listener for QRIS payment confirmation
   useEffect(() => {
     if (!echo || !currentOrderNumber) return;
 
@@ -103,6 +123,7 @@ export default function PaymentPage() {
     channel.listen('OrderPaid', (e: any) => {
       if (e.order.order_number === currentOrderNumber) {
         clearCart();
+        fetchOrders();
         router.push(`/queue?id=${e.order.queue_number}`);
       }
     });
@@ -110,12 +131,18 @@ export default function PaymentPage() {
     return () => {
       channel.stopListening('OrderPaid');
     };
-  }, [currentOrderNumber]);
+  }, [currentOrderNumber, clearCart, fetchOrders, router]);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m}:${s.toString().padStart(2, "0")}`;
+  };
+
+  // Reset QRIS — allow user to retry after timer expires
+  const handleRetryQris = () => {
+    setTimerExpired(false);
+    handleQrisSelect();
   };
 
   return (
@@ -173,7 +200,7 @@ export default function PaymentPage() {
             <p className="text-5xl font-black text-[#E53935] mb-12">{formatPrice(total)}</p>
 
             <AnimatePresence mode="wait">
-              {method === "qris" && (
+              {method === "qris" && !timerExpired && (
                 <motion.div
                   key="qris"
                   initial={{ opacity: 0, scale: 0.9 }}
@@ -198,8 +225,40 @@ export default function PaymentPage() {
                   )}
                   <p className="text-2xl font-bold text-gray-900 mb-2">Menunggu Pembayaran...</p>
                   <p className="text-xl text-gray-500 mb-6">Scan kode QR di atas dengan aplikasi kamu</p>
-                  <div className="bg-red-50 text-[#E53935] px-6 py-3 rounded-full text-xl font-bold">
+                  <div className={`px-6 py-3 rounded-full text-xl font-bold ${
+                    timer <= 60 ? "bg-red-100 text-red-600 animate-pulse" : "bg-red-50 text-[#E53935]"
+                  }`}>
                     Sisa waktu: {formatTime(timer)}
+                  </div>
+                </motion.div>
+              )}
+
+              {method === "qris" && timerExpired && (
+                <motion.div
+                  key="qris-expired"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  className="flex flex-col items-center"
+                >
+                  <div className="w-24 h-24 bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-6 text-5xl">
+                    ✕
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900 mb-2">Waktu Habis</p>
+                  <p className="text-xl text-gray-500 mb-8">Sesi pembayaran QRIS telah berakhir</p>
+                  <div className="flex gap-4">
+                    <button
+                      onClick={handleRetryQris}
+                      className="bg-[#E53935] text-white px-8 py-4 rounded-full text-xl font-bold hover:bg-[#C62828] shadow-xl transition-all"
+                    >
+                      Coba Lagi
+                    </button>
+                    <button
+                      onClick={() => router.push("/menu")}
+                      className="bg-gray-100 text-gray-700 px-8 py-4 rounded-full text-xl font-bold hover:bg-gray-200 transition-all"
+                    >
+                      Kembali
+                    </button>
                   </div>
                 </motion.div>
               )}
@@ -218,10 +277,11 @@ export default function PaymentPage() {
                   <p className="text-2xl font-bold text-gray-900 mb-4">Siapkan uang tunai</p>
                   <p className="text-xl text-gray-500 mb-8">Bayar ke kasir dengan nomor antrean kamu nanti.</p>
                   <button
-                    onClick={handleSuccess}
-                    className="w-full bg-[#E53935] text-white py-6 rounded-full text-2xl font-bold hover:bg-[#C62828] shadow-xl"
+                    onClick={handleCashOrder}
+                    disabled={loadingCash}
+                    className="w-full bg-[#E53935] text-white py-6 rounded-full text-2xl font-bold hover:bg-[#C62828] shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   >
-                    Konfirmasi Pesanan
+                    {loadingCash ? "Memproses..." : "Konfirmasi Pesanan"}
                   </button>
                 </motion.div>
               )}

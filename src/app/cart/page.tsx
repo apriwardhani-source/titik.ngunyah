@@ -3,16 +3,13 @@
 import { useCartStore } from "@/store/useCartStore";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { formatPrice } from "@/lib/utils";
 
 export default function CartPage() {
   const router = useRouter();
   const { items, removeItem, updateQuantity, getTotalPrice } = useCartStore();
 
   const total = getTotalPrice();
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(price);
-  };
 
   if (items.length === 0) {
     return (

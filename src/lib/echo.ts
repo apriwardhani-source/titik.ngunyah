@@ -16,8 +16,8 @@ if (typeof window !== 'undefined') {
     broadcaster: 'reverb',
     key: process.env.NEXT_PUBLIC_REVERB_APP_KEY || 'mj47xsyfbdkdaoy8xsyp',
     wsHost: process.env.NEXT_PUBLIC_REVERB_HOST || 'localhost',
-    wsPort: process.env.NEXT_PUBLIC_REVERB_PORT ?? 8080,
-    wssPort: process.env.NEXT_PUBLIC_REVERB_PORT ?? 8080,
+    wsPort: Number(process.env.NEXT_PUBLIC_REVERB_PORT ?? 8080),
+    wssPort: Number(process.env.NEXT_PUBLIC_REVERB_PORT ?? 8080),
     forceTLS: (process.env.NEXT_PUBLIC_REVERB_SCHEME ?? 'http') === 'https',
     enabledTransports: ['ws', 'wss'],
   });

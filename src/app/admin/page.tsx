@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { DollarSign, ShoppingBag, Clock, CheckCircle2 } from "lucide-react";
 import { useOrderStore } from "@/store/useOrderStore";
+import { formatPrice, getStatusColor } from "@/lib/utils";
 import Link from "next/link";
 
 export default function AdminDashboard() {
@@ -20,28 +21,12 @@ export default function AdminDashboard() {
   const pendingCount = todaysOrders.filter(o => o.status === "Menunggu").length;
   const completedCount = todaysOrders.filter(o => o.status === "Selesai").length;
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(price);
-  };
-
   const stats = [
     { name: "Pendapatan Hari Ini", value: formatPrice(todayRevenue), icon: DollarSign, color: "text-green-600", bg: "bg-green-100" },
     { name: "Total Pesanan", value: todaysOrders.length.toString(), icon: ShoppingBag, color: "text-blue-600", bg: "bg-blue-100" },
     { name: "Pesanan Menunggu", value: pendingCount.toString(), icon: Clock, color: "text-orange-600", bg: "bg-orange-100" },
     { name: "Pesanan Selesai", value: completedCount.toString(), icon: CheckCircle2, color: "text-purple-600", bg: "bg-purple-100" },
   ];
-
-  const getStatusColor = (status: string) => {
-    switch(status) {
-      case "Menunggu": return "bg-orange-100 text-orange-700 border-orange-200";
-      case "Dibayar": return "bg-yellow-100 text-yellow-700 border-yellow-200";
-      case "Disiapkan": return "bg-blue-100 text-blue-700 border-blue-200";
-      case "Siap": return "bg-green-100 text-green-700 border-green-200";
-      case "Selesai": return "bg-gray-100 text-gray-700 border-gray-200";
-      case "Dibatalkan": return "bg-red-100 text-red-700 border-red-200";
-      default: return "bg-gray-100 text-gray-700";
-    }
-  };
 
   return (
     <div className="space-y-8">

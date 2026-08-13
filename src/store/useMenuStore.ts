@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { getApiUrl } from '@/lib/utils';
 
 export interface Category {
   id: string;
@@ -23,13 +24,11 @@ interface MenuState {
   addCategory: (category: Category) => void;
   updateCategory: (id: string, category: Partial<Category>) => void;
   deleteCategory: (id: string) => void;
-  addProduct: (product: Product) => Promise<void>;
+  addProduct: (product: Partial<Product>) => Promise<void>;
   updateProduct: (id: string | number, product: Partial<Product>) => Promise<void>;
   deleteProduct: (id: string | number) => Promise<void>;
   fetchMenus: (isAdmin?: boolean) => Promise<void>;
 }
-
-const getApiUrl = () => process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
 
 export const useMenuStore = create<MenuState>()(
   persist(
