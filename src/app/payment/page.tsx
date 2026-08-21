@@ -1,303 +1,293 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCartStore } from "@/store/useCartStore";
 import { useOrderStore } from "@/store/useOrderStore";
 import { motion, AnimatePresence } from "framer-motion";
-import { echo } from "@/lib/echo";
 import { formatPrice, getApiUrl } from "@/lib/utils";
+import { QrCode, Banknote, ArrowLeft, CheckCircle, ShieldCheck, AlertCircle } from "lucide-react";
 
 export default function PaymentPage() {
   const router = useRouter();
   const { getTotalPrice, clearCart, items } = useCartStore();
   const { fetchOrders } = useOrderStore();
-  const [method, setMethod] = useState<"qris" | "cash" | null>(null);
-  const [timer, setTimer] = useState(300);
-  const [qrUrl, setQrUrl] = useState<string | null>(null);
-  const [loadingQr, setLoadingQr] = useState(false);
-  const [loadingCash, setLoadingCash] = useState(false);
-  const [currentOrderNumber, setCurrentOrderNumber] = useState<string | null>(null);
-  const [queueNumber, setQueueNumber] = useState<string | null>(null);
-  const [timerExpired, setTimerExpired] = useState(false);
+  const [method, setMethod] = useState<"qris" | "cash" | null>("qris");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const total = getTotalPrice();
 
-  // Handle cash order — POST to backend checkout, then redirect
-  const handleCashOrder = async () => {
-    setLoadingCash(true);
+  const handleProcessOrder = async (selectedMethod: "qris" | "cash") => {
+    if (items.length === 0) {
+      router.push("/menu");
+      return;
+    }
+
+    setIsProcessing(true);
+    setErrorMsg(null);
+
     try {
       const payload = {
-        items: items.map(item => ({
+        items: items.map((item) => ({
           menu_id: item.id,
           qty: item.quantity,
-          notes: item.notes
+          price: item.price,
+          notes: item.notes || "",
         })),
-        customer_name: "Guest",
-        payment_method: "cash"
+        customer_name: "Guest Kiosk",
+        payment_method: selectedMethod,
       };
 
       const res = await fetch(`${getApiUrl()}/checkout`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
+
       const data = await res.json();
 
-      if (data.status === 'success') {
+      if (data.status === "success" && data.data) {
         clearCart();
         fetchOrders();
         router.push(`/queue?id=${data.data.queue_number}`);
       } else {
-        alert("Gagal membuat pesanan: " + (data.message || "Unknown error"));
+        setErrorMsg(data.message || "Gagal memproses pesanan. Silakan coba lagi.");
       }
-    } catch (error) {
-      console.error("Failed to create cash order", error);
-      alert("Gagal membuat pesanan. Pastikan server backend aktif.");
+    } catch (error: any) {
+      console.error("Checkout error:", error);
+      setErrorMsg("Koneksi gagal. Pastikan database TiDB terhubung.");
     } finally {
-      setLoadingCash(false);
+      setIsProcessing(false);
     }
-  };
-
-  const handleQrisSelect = async () => {
-    setMethod("qris");
-    setTimer(300);
-    setTimerExpired(false);
-    setLoadingQr(true);
-    setQrUrl(null);
-    setCurrentOrderNumber(null);
-    setQueueNumber(null);
-    
-    try {
-      const payload = {
-        items: items.map(item => ({
-          menu_id: item.id,
-          qty: item.quantity,
-          notes: item.notes
-        })),
-        customer_name: "Guest"
-      };
-
-      const res = await fetch(`${getApiUrl()}/checkout`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      
-      if (data.status === 'success') {
-        setQrUrl(data.data.payment.qr_url);
-        setCurrentOrderNumber(data.data.order_number);
-        setQueueNumber(data.data.queue_number);
-      }
-    } catch (error) {
-      console.error("Failed to checkout QRIS", error);
-    } finally {
-      setLoadingQr(false);
-    }
-  };
-
-  // QRIS countdown timer
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
-    if (method === "qris" && timer > 0 && !timerExpired) {
-      interval = setInterval(() => {
-        setTimer((prev) => {
-          if (prev <= 1) {
-            setTimerExpired(true);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    
-    return () => clearInterval(interval);
-  }, [method, timer, timerExpired]);
-
-  // WebSocket Listener for QRIS payment confirmation
-  useEffect(() => {
-    if (!echo || !currentOrderNumber) return;
-
-    const channel = echo.channel('orders');
-    channel.listen('OrderPaid', (e: any) => {
-      if (e.order.order_number === currentOrderNumber) {
-        clearCart();
-        fetchOrders();
-        router.push(`/queue?id=${e.order.queue_number}`);
-      }
-    });
-
-    return () => {
-      channel.stopListening('OrderPaid');
-    };
-  }, [currentOrderNumber, clearCart, fetchOrders, router]);
-
-  const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s.toString().padStart(2, "0")}`;
-  };
-
-  // Reset QRIS — allow user to retry after timer expires
-  const handleRetryQris = () => {
-    setTimerExpired(false);
-    handleQrisSelect();
   };
 
   return (
-    <div className="flex h-screen bg-background p-12">
-      <div className="max-w-5xl w-full mx-auto flex flex-col">
-        <div className="flex items-center gap-6 mb-12">
+    <div className="flex h-screen bg-gray-50 p-8 lg:p-12 overflow-hidden select-none">
+      <div className="max-w-6xl w-full mx-auto flex flex-col h-full">
+        {/* Header */}
+        <div className="flex items-center gap-6 mb-8 shrink-0">
           <button
             onClick={() => router.push("/cart")}
-            className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center text-3xl font-bold text-gray-600 hover:bg-gray-50 transition-colors"
+            className="w-14 h-14 rounded-2xl bg-white shadow-sm border border-gray-200 flex items-center justify-center text-gray-700 hover:bg-gray-100 hover:scale-105 active:scale-95 transition-all"
           >
-            ←
+            <ArrowLeft size={28} />
           </button>
-          <h1 className="text-5xl font-black text-gray-900 tracking-tight">Pembayaran</h1>
+          <div>
+            <h1 className="text-4xl font-black text-gray-900 tracking-tight">Metode Pembayaran</h1>
+            <p className="text-gray-500 text-lg">Pilih cara bayar yang paling nyaman untukmu</p>
+          </div>
         </div>
 
-        <div className="flex flex-1 gap-12">
-          {/* Left: Methods */}
-          <div className="flex-1 space-y-6">
-            <h2 className="text-3xl font-bold text-gray-800 mb-8">Pilih Metode</h2>
-            
+        {/* Content Area */}
+        <div className="flex flex-1 gap-8 min-h-0 pb-4">
+          {/* Left: Method Selection */}
+          <div className="w-1/2 space-y-5 flex flex-col justify-start">
+            <h2 className="text-2xl font-bold text-gray-800">Pilihan Bayar</h2>
+
+            {/* QRIS Option */}
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={handleQrisSelect}
-              className={`w-full p-8 rounded-[2rem] border-2 text-left flex items-center justify-between transition-all ${
-                method === "qris" ? "border-[#E53935] bg-red-50 shadow-lg" : "border-gray-200 bg-white hover:border-gray-300"
+              onClick={() => {
+                setMethod("qris");
+                setErrorMsg(null);
+              }}
+              className={`w-full p-6 rounded-3xl border-2 text-left flex items-center justify-between transition-all ${
+                method === "qris"
+                  ? "border-[#E53935] bg-red-50/60 shadow-lg shadow-red-500/10 ring-4 ring-red-100"
+                  : "border-gray-200 bg-white hover:border-gray-300 shadow-sm"
               }`}
             >
-              <div>
-                <h3 className="text-3xl font-bold text-gray-900">QRIS</h3>
-                <p className="text-gray-500 mt-2 text-xl">Bayar dengan e-wallet atau mobile banking</p>
+              <div className="flex items-center gap-5">
+                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${
+                  method === "qris" ? "bg-[#E53935] text-white" : "bg-gray-100 text-gray-700"
+                }`}>
+                  <QrCode size={36} />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900">QRIS</h3>
+                  <p className="text-gray-500 text-base mt-1">BCA, GoPay, OVO, DANA, ShopeePay, Mandiri, dll</p>
+                </div>
               </div>
-              <div className={`w-8 h-8 rounded-full border-4 ${method === "qris" ? "border-[#E53935] bg-[#E53935]" : "border-gray-300"}`} />
+              <div className={`w-7 h-7 rounded-full border-4 flex items-center justify-center ${
+                method === "qris" ? "border-[#E53935] bg-[#E53935]" : "border-gray-300"
+              }`}>
+                {method === "qris" && <div className="w-2.5 h-2.5 bg-white rounded-full" />}
+              </div>
             </motion.button>
 
+            {/* Cash Option */}
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => setMethod("cash")}
-              className={`w-full p-8 rounded-[2rem] border-2 text-left flex items-center justify-between transition-all ${
-                method === "cash" ? "border-[#E53935] bg-red-50 shadow-lg" : "border-gray-200 bg-white hover:border-gray-300"
+              onClick={() => {
+                setMethod("cash");
+                setErrorMsg(null);
+              }}
+              className={`w-full p-6 rounded-3xl border-2 text-left flex items-center justify-between transition-all ${
+                method === "cash"
+                  ? "border-[#E53935] bg-red-50/60 shadow-lg shadow-red-500/10 ring-4 ring-red-100"
+                  : "border-gray-200 bg-white hover:border-gray-300 shadow-sm"
               }`}
             >
-              <div>
-                <h3 className="text-3xl font-bold text-gray-900">Tunai di Kasir</h3>
-                <p className="text-gray-500 mt-2 text-xl">Bayar langsung ke kasir</p>
+              <div className="flex items-center gap-5">
+                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${
+                  method === "cash" ? "bg-[#E53935] text-white" : "bg-gray-100 text-gray-700"
+                }`}>
+                  <Banknote size={36} />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900">Tunai di Kasir</h3>
+                  <p className="text-gray-500 text-base mt-1">Bayar langsung dengan uang tunai di kasir</p>
+                </div>
               </div>
-              <div className={`w-8 h-8 rounded-full border-4 ${method === "cash" ? "border-[#E53935] bg-[#E53935]" : "border-gray-300"}`} />
+              <div className={`w-7 h-7 rounded-full border-4 flex items-center justify-center ${
+                method === "cash" ? "border-[#E53935] bg-[#E53935]" : "border-gray-300"
+              }`}>
+                {method === "cash" && <div className="w-2.5 h-2.5 bg-white rounded-full" />}
+              </div>
             </motion.button>
+
+            {/* Security note */}
+            <div className="bg-white p-5 rounded-2xl border border-gray-200 flex items-center gap-4 text-gray-600 shadow-sm mt-auto">
+              <ShieldCheck size={32} className="text-green-600 shrink-0" />
+              <p className="text-sm">
+                Transaksi aman & langsung terhubung dengan antrean dapur <strong>Titik Ngunyah</strong>.
+              </p>
+            </div>
           </div>
 
-          {/* Right: Payment Detail / QR */}
-          <div className="w-[500px] bg-white rounded-[2rem] shadow-xl p-10 flex flex-col items-center justify-center text-center">
-            <h3 className="text-2xl font-bold text-gray-600 mb-4">Total Pembayaran</h3>
-            <p className="text-5xl font-black text-[#E53935] mb-12">{formatPrice(total)}</p>
+          {/* Right: Payment Detail Card */}
+          <div className="w-1/2 bg-white rounded-[2.5rem] shadow-xl border border-gray-100 p-8 flex flex-col items-center justify-between overflow-y-auto">
+            <div className="w-full text-center">
+              <span className="text-gray-500 font-semibold text-lg uppercase tracking-wider">Total yang Harus Dibayar</span>
+              <p className="text-5xl font-black text-[#E53935] mt-2 tracking-tight">{formatPrice(total)}</p>
+            </div>
+
+            {errorMsg && (
+              <div className="w-full bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl flex items-center gap-3 my-4">
+                <AlertCircle size={24} className="shrink-0" />
+                <p className="text-sm font-medium">{errorMsg}</p>
+              </div>
+            )}
 
             <AnimatePresence mode="wait">
-              {method === "qris" && !timerExpired && (
+              {method === "qris" && (
                 <motion.div
-                  key="qris"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  className="flex flex-col items-center"
+                  key="qris-card"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="flex flex-col items-center w-full my-4"
                 >
-                  <div className="w-64 h-64 bg-gray-100 rounded-3xl mb-6 flex items-center justify-center border-4 border-gray-200 overflow-hidden">
-                    {loadingQr ? (
-                      <span className="text-gray-400 font-bold">Memuat QRIS...</span>
-                    ) : qrUrl ? (
-                      <img src={qrUrl} alt="QRIS" className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-red-500 font-bold">Gagal memuat QRIS</span>
-                    )}
-                  </div>
-                  {queueNumber && (
-                    <div className="bg-gray-100 px-8 py-2 rounded-full mb-4">
-                      <span className="text-gray-500 text-sm font-bold uppercase tracking-widest">No. Antrean</span>
-                      <p className="text-3xl font-black text-gray-900 text-center">{queueNumber}</p>
+                  {/* QRIS Card UI */}
+                  <div className="bg-gradient-to-b from-gray-900 to-gray-800 text-white rounded-3xl p-6 shadow-2xl flex flex-col items-center max-w-sm w-full border-4 border-gray-900">
+                    <div className="flex items-center justify-between w-full mb-3 px-2 border-b border-gray-700 pb-2">
+                      <span className="font-black text-xl tracking-widest text-[#E53935]">QRIS</span>
+                      <span className="text-xs text-gray-300 font-mono">NMID: ID1020039201948</span>
                     </div>
-                  )}
-                  <p className="text-2xl font-bold text-gray-900 mb-2">Menunggu Pembayaran...</p>
-                  <p className="text-xl text-gray-500 mb-6">Scan kode QR di atas dengan aplikasi kamu</p>
-                  <div className={`px-6 py-3 rounded-full text-xl font-bold ${
-                    timer <= 60 ? "bg-red-100 text-red-600 animate-pulse" : "bg-red-50 text-[#E53935]"
-                  }`}>
-                    Sisa waktu: {formatTime(timer)}
-                  </div>
-                </motion.div>
-              )}
 
-              {method === "qris" && timerExpired && (
-                <motion.div
-                  key="qris-expired"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  className="flex flex-col items-center"
-                >
-                  <div className="w-24 h-24 bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-6 text-5xl">
-                    ✕
+                    <div className="bg-white p-3 rounded-2xl shadow-inner my-1">
+                      {/* Realistic SVG QR Pattern */}
+                      <svg className="w-48 h-48" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="100" height="100" fill="white" />
+                        {/* Top-left marker */}
+                        <rect x="10" y="10" width="24" height="24" rx="4" fill="#111827" />
+                        <rect x="14" y="14" width="16" height="16" rx="2" fill="white" />
+                        <rect x="18" y="18" width="8" height="8" rx="1" fill="#E53935" />
+                        {/* Top-right marker */}
+                        <rect x="66" y="10" width="24" height="24" rx="4" fill="#111827" />
+                        <rect x="70" y="14" width="16" height="16" rx="2" fill="white" />
+                        <rect x="74" y="18" width="8" height="8" rx="1" fill="#E53935" />
+                        {/* Bottom-left marker */}
+                        <rect x="10" y="66" width="24" height="24" rx="4" fill="#111827" />
+                        <rect x="14" y="70" width="16" height="16" rx="2" fill="white" />
+                        <rect x="18" y="74" width="8" height="8" rx="1" fill="#E53935" />
+                        {/* QR Data Dots */}
+                        <rect x="42" y="12" width="6" height="6" fill="#111827" />
+                        <rect x="52" y="12" width="6" height="6" fill="#111827" />
+                        <rect x="42" y="24" width="12" height="6" fill="#111827" />
+                        <rect x="46" y="36" width="8" height="8" rx="2" fill="#E53935" />
+                        <rect x="12" y="42" width="6" height="6" fill="#111827" />
+                        <rect x="24" y="42" width="6" height="12" fill="#111827" />
+                        <rect x="66" y="42" width="10" height="6" fill="#111827" />
+                        <rect x="80" y="42" width="8" height="8" fill="#111827" />
+                        <rect x="38" y="52" width="8" height="8" fill="#111827" />
+                        <rect x="54" y="52" width="8" height="6" fill="#111827" />
+                        <rect x="70" y="54" width="8" height="8" fill="#111827" />
+                        <rect x="82" y="58" width="6" height="12" fill="#111827" />
+                        <rect x="42" y="68" width="6" height="8" fill="#111827" />
+                        <rect x="52" y="74" width="12" height="6" fill="#111827" />
+                        <rect x="42" y="82" width="10" height="6" fill="#111827" />
+                        <rect x="68" y="76" width="18" height="6" fill="#111827" />
+                        <rect x="74" y="86" width="12" height="6" fill="#111827" />
+                      </svg>
+                    </div>
+
+                    <p className="font-bold text-base mt-2">TITIK NGUNYAH</p>
+                    <p className="text-xs text-gray-400">Scan & masukkan nominal manual</p>
                   </div>
-                  <p className="text-2xl font-bold text-gray-900 mb-2">Waktu Habis</p>
-                  <p className="text-xl text-gray-500 mb-8">Sesi pembayaran QRIS telah berakhir</p>
-                  <div className="flex gap-4">
-                    <button
-                      onClick={handleRetryQris}
-                      className="bg-[#E53935] text-white px-8 py-4 rounded-full text-xl font-bold hover:bg-[#C62828] shadow-xl transition-all"
-                    >
-                      Coba Lagi
-                    </button>
-                    <button
-                      onClick={() => router.push("/menu")}
-                      className="bg-gray-100 text-gray-700 px-8 py-4 rounded-full text-xl font-bold hover:bg-gray-200 transition-all"
-                    >
-                      Kembali
-                    </button>
+
+                  {/* Step Instructions */}
+                  <div className="w-full bg-amber-50 border border-amber-200 rounded-2xl p-3.5 mt-3 text-amber-900 text-sm space-y-1">
+                    <p className="font-bold flex items-center gap-1.5 text-amber-800">
+                      <span>💡</span> Petunjuk Pembayaran:
+                    </p>
+                    <p>1. Buka m-banking / e-wallet kamu & scan kode QR di atas.</p>
+                    <p>2. Masukkan nominal persis: <strong>{formatPrice(total)}</strong>.</p>
+                    <p>3. Jika sudah bayar, tekan tombol konfirmasi di bawah.</p>
                   </div>
                 </motion.div>
               )}
 
               {method === "cash" && (
                 <motion.div
-                  key="cash"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  className="flex flex-col items-center"
+                  key="cash-card"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="flex flex-col items-center w-full my-8 text-center"
                 >
-                  <div className="w-32 h-32 bg-gray-100 rounded-full mb-8 flex items-center justify-center">
-                    <span className="text-6xl text-gray-400">Rp</span>
+                  <div className="w-28 h-28 bg-red-100 rounded-full flex items-center justify-center text-5xl text-[#E53935] mb-6 shadow-inner">
+                    💵
                   </div>
-                  <p className="text-2xl font-bold text-gray-900 mb-4">Siapkan uang tunai</p>
-                  <p className="text-xl text-gray-500 mb-8">Bayar ke kasir dengan nomor antrean kamu nanti.</p>
-                  <button
-                    onClick={handleCashOrder}
-                    disabled={loadingCash}
-                    className="w-full bg-[#E53935] text-white py-6 rounded-full text-2xl font-bold hover:bg-[#C62828] shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                  >
-                    {loadingCash ? "Memproses..." : "Konfirmasi Pesanan"}
-                  </button>
-                </motion.div>
-              )}
-
-              {!method && (
-                <motion.div
-                  key="empty"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="text-gray-400 text-xl"
-                >
-                  Silakan pilih metode pembayaran di sebelah kiri.
+                  <h4 className="text-2xl font-bold text-gray-900 mb-2">Siapkan Uang Tunai</h4>
+                  <p className="text-gray-500 text-lg max-w-md">
+                    Pesanan akan langsung dikirim ke dapur. Silakan bayar ke kasir dengan menyebutkan <strong>Nomor Antrean</strong> kamu.
+                  </p>
                 </motion.div>
               )}
             </AnimatePresence>
+
+            {/* Action Button */}
+            <div className="w-full mt-auto pt-2">
+              <button
+                onClick={() => method && handleProcessOrder(method)}
+                disabled={isProcessing || !method}
+                className="w-full bg-[#E53935] hover:bg-[#C62828] text-white py-5 rounded-2xl text-2xl font-bold shadow-xl shadow-red-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+              >
+                {isProcessing ? (
+                  <span className="flex items-center gap-3">
+                    <svg className="animate-spin h-7 w-7 text-white" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                    Memproses Pesanan...
+                  </span>
+                ) : method === "qris" ? (
+                  <>
+                    <CheckCircle size={28} />
+                    <span>Saya Sudah Bayar (Konfirmasi)</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle size={28} />
+                    <span>Konfirmasi Pesanan Tunai</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>

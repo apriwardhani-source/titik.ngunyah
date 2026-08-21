@@ -35,5 +35,6 @@ export function getStatusColor(status: string): string {
  * API base URL helper.
  */
 export function getApiUrl(): string {
-  return process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api";
+  return process.env.NEXT_PUBLIC_API_URL || "/api";
 }
+
