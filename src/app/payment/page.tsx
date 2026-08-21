@@ -63,27 +63,28 @@ export default function PaymentPage() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 p-8 lg:p-12 overflow-hidden select-none">
-      <div className="max-w-6xl w-full mx-auto flex flex-col h-full">
+    <div className="flex h-[100dvh] max-h-[100dvh] bg-gray-50 p-4 md:p-6 lg:p-8 overflow-hidden select-none">
+      <div className="max-w-6xl w-full mx-auto flex flex-col h-full min-h-0">
         {/* Header */}
-        <div className="flex items-center gap-6 mb-8 shrink-0">
+        <div className="flex items-center gap-4 md:gap-6 mb-4 md:mb-6 shrink-0">
           <button
             onClick={() => router.push("/cart")}
-            className="w-14 h-14 rounded-2xl bg-white shadow-sm border border-gray-200 flex items-center justify-center text-gray-700 hover:bg-gray-100 hover:scale-105 active:scale-95 transition-all"
+            className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-white shadow-sm border border-gray-200 flex items-center justify-center text-gray-700 hover:bg-gray-100 hover:scale-105 active:scale-95 transition-all shrink-0"
           >
-            <ArrowLeft size={28} />
+            <ArrowLeft size={24} />
           </button>
           <div>
-            <h1 className="text-4xl font-black text-gray-900 tracking-tight">Metode Pembayaran</h1>
-            <p className="text-gray-500 text-lg">Pilih cara bayar yang paling nyaman untukmu</p>
+            <h1 className="text-2xl md:text-4xl font-black text-gray-900 tracking-tight">Metode Pembayaran</h1>
+            <p className="text-gray-500 text-sm md:text-base">Pilih cara bayar yang paling nyaman untukmu</p>
           </div>
         </div>
 
         {/* Content Area */}
-        <div className="flex flex-1 gap-8 min-h-0 pb-4">
+        <div className="flex flex-col md:flex-row flex-1 gap-6 md:gap-8 min-h-0 pb-2 overflow-y-auto md:overflow-hidden touch-scroll">
           {/* Left: Method Selection */}
-          <div className="w-1/2 space-y-5 flex flex-col justify-start">
-            <h2 className="text-2xl font-bold text-gray-800">Pilihan Bayar</h2>
+          <div className="w-full md:w-1/2 space-y-4 md:space-y-5 flex flex-col justify-start shrink-0">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-800">Pilihan Bayar</h2>
+
 
             {/* QRIS Option */}
             <motion.button

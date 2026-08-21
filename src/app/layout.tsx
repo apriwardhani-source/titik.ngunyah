@@ -17,12 +17,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id">
-      <body className={`${inter.className} bg-background text-gray-900 antialiased h-screen overflow-hidden flex flex-col`}>
+    <html lang="id" className="h-full">
+      <body className={`${inter.className} bg-background text-gray-900 antialiased h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col`}>
         <SyncOrders />
         {children}
         <FloatingCart />
       </body>
     </html>
+
   );
 }

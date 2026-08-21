@@ -43,18 +43,18 @@ export default function MenuPage() {
   };
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-[100dvh] max-h-[100dvh] bg-background overflow-hidden select-none">
       {/* Sidebar */}
-      <div className="w-1/4 max-w-sm bg-white shadow-xl flex flex-col z-10">
-        <div className="p-8 pb-4 border-b border-gray-100">
-          <h2 className="text-3xl font-black text-[#E53935] tracking-tight">MENU</h2>
+      <div className="w-1/4 max-w-sm bg-white shadow-xl flex flex-col z-10 shrink-0">
+        <div className="p-6 md:p-8 pb-4 border-b border-gray-100">
+          <h2 className="text-2xl md:text-3xl font-black text-[#E53935] tracking-tight">MENU</h2>
         </div>
-        <div className="flex-1 overflow-y-auto hide-scrollbar py-4 px-6 space-y-4">
+        <div className="flex-1 overflow-y-auto touch-scroll hide-scrollbar py-4 px-4 md:px-6 space-y-3 md:space-y-4">
           {categories.map(cat => (
             <button
               key={cat.id}
               onClick={() => setActiveCategory(cat.name)}
-              className={`w-full text-left px-6 py-5 rounded-2xl text-xl font-semibold transition-all duration-300 ${
+              className={`w-full text-left px-5 py-4 md:px-6 md:py-5 rounded-2xl text-lg md:text-xl font-semibold transition-all duration-300 ${
                 activeCategory === cat.name
                   ? "bg-[#E53935] text-white shadow-lg shadow-red-500/30 scale-[1.02]"
                   : "bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
@@ -67,8 +67,9 @@ export default function MenuPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-8 overflow-y-auto hide-scrollbar">
-        <h3 className="text-4xl font-bold mb-8 text-gray-800">{activeCategory}</h3>
+      <div className="flex-1 p-6 md:p-8 overflow-y-auto touch-scroll hide-scrollbar">
+        <h3 className="text-3xl md:text-4xl font-bold mb-6 md:mb-8 text-gray-800">{activeCategory}</h3>
+
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-8 pb-32">
           {filteredProducts.map(product => (
             <motion.div

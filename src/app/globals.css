@@ -10,16 +10,19 @@
 }
 
 @layer base {
-  body {
+  html, body {
+    height: 100%;
+    min-height: 100dvh;
     background-color: var(--color-background);
     color: #1F2937;
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
   }
 }
 
-/* Custom Utilities for Kiosk */
+/* Custom Utilities for Kiosk & iPad Touch */
 @layer utilities {
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
@@ -29,6 +32,12 @@
     scrollbar-width: none;
   }
   
+  .touch-scroll {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+  }
+
   .glass-panel {
     background: rgba(255, 255, 255, 0.8);
     backdrop-filter: blur(16px);
@@ -36,3 +45,4 @@
     border: 1px solid rgba(255, 255, 255, 0.3);
   }
 }
+
