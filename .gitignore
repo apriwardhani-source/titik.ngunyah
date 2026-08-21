@@ -39,3 +39,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# backend (laravel)
+/backend/vendor/
+/backend/node_modules/
+/backend/public/storage
+/backend/public/hot
+/backend/storage/*.key
+/backend/.phpunit.result.cache
+/backend/.env
+/backend/.env.backup
+/backend/.env.production
+

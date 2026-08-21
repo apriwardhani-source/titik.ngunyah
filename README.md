@@ -1,36 +1,132 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🍖 Titik Ngunyah — Self-Order Kiosk (Fullstack Monorepo)
 
-## Getting Started
+Aplikasi **Self-Order Kiosk** untuk restoran Titik Ngunyah (Kebab & Kentang Goreng). Pelanggan bisa memesan langsung dari layar kiosk, memilih metode pembayaran (QRIS / Tunai), dan mendapatkan nomor antrean otomatis secara realtime.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 🏗️ Struktur Project (Monorepo)
+
+Semua kode frontend dan backend sekarang berada dalam **1 repository**:
+
+```
+titik.ngunyah/
+├── backend/                  # Backend API (Laravel 11, Reverb WebSocket)
+│   ├── app/
+│   ├── routes/
+│   ├── .env.example
+│   └── artisan
+│
+├── src/                      # Frontend Kiosk (Next.js 16, React 19, Tailwind v4)
+│   ├── app/                  # Routes (kiosk pages & admin)
+│   ├── components/
+│   ├── store/                # Zustand state stores
+│   └── lib/
+│
+├── public/                   # Static assets & images
+├── package.json
+└── README.md
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+| Komponen | Tech Stack | Cloud / Hosting |
+|---|---|---|
+| **Frontend** | Next.js 16, React 19, TypeScript, Tailwind CSS v4, Zustand | **Vercel** |
+| **Backend** | Laravel 11 (PHP 8.2+), Laravel Reverb (WebSocket) | **Local / VPS / Cloud** |
+| **Database** | MySQL (Kompatibel 100%) | **TiDB Cloud (Serverless Free)** |
+| **Payment Gateway** | Midtrans (QRIS & Core API) | **Midtrans Sandbox** |
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🚀 Cara Setup & Menjalankan (Step by Step)
 
-## Learn More
+### 1. Clone Repository (Hanya 1 Kali Clone)
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+cd C:\laragon\www
+git clone https://github.com/apriwardhani-source/titik.ngunyah.git
+cd titik.ngunyah
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 2. Setup Database & Backend (Laravel)
 
-## Deploy on Vercel
+```bash
+cd backend
+composer install
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+#### Buat file `.env` backend:
+Copy file `.env.example` menjadi `.env`:
+```bash
+cp .env.example .env
+php artisan key:generate
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Database sudah menggunakan **TiDB Cloud (Serverless)**, pastikan konfigurasi di `backend/.env` terisi:
+```env
+DB_CONNECTION=mysql
+DB_HOST=gateway01.ap-southeast-1.prod.aws.tidbcloud.com
+DB_PORT=4000
+DB_DATABASE=titik_ngunyah
+DB_USERNAME=2mutHwzd3LgsP27.root
+DB_PASSWORD=GBi554ID2Jx6OGlK
+```
+
+#### Jalankan migrasi & seed awal:
+```bash
+php artisan migrate --seed
+```
+
+---
+
+### 3. Setup Frontend (Next.js)
+
+Buka terminal di root folder project (`titik.ngunyah`):
+
+```bash
+npm install
+```
+
+Pastikan file `.env.local` di root berisi:
+```env
+NEXT_PUBLIC_API_URL=http://127.0.0.1:8000/api
+NEXT_PUBLIC_REVERB_APP_KEY=mj47xsyfbdkdaoy8xsyp
+NEXT_PUBLIC_REVERB_HOST=localhost
+NEXT_PUBLIC_REVERB_PORT=8080
+NEXT_PUBLIC_REVERB_SCHEME=http
+```
+
+---
+
+## 🖥️ Cara Menjalankan Sehari-hari
+
+Buka **3 terminal**:
+
+| Terminal | Lokasi Folder | Perintah | Fungsi |
+|---|---|---|---|
+| 1️⃣ | `titik.ngunyah/backend` | `php artisan serve` | API Backend (`http://127.0.0.1:8000`) |
+| 2️⃣ | `titik.ngunyah/backend` | `php artisan reverb:start` | WebSocket Realtime (`port 8080`) |
+| 3️⃣ | `titik.ngunyah` (root) | `npm run dev` | Frontend Kiosk (`http://localhost:3000`) |
+
+---
+
+## 🌐 Deploy ke Vercel (Frontend)
+
+1. Import repository `titik.ngunyah` ke akun Vercel kamu.
+2. Di bagian **Environment Variables** Vercel, masukkan:
+   - `NEXT_PUBLIC_API_URL` = `https://url-backend-kamu/api`
+   - `NEXT_PUBLIC_REVERB_APP_KEY` = `mj47xsyfbdkdaoy8xsyp`
+   - `NEXT_PUBLIC_REVERB_HOST` = `url-backend-kamu`
+   - `NEXT_PUBLIC_REVERB_PORT` = `8080`
+   - `NEXT_PUBLIC_REVERB_SCHEME` = `https`
+3. Klik **Deploy**! 🚀
+
+---
+
+## 🔗 Halaman Penting
+
+- **Kiosk Pelanggan:** `http://localhost:3000`
+- **Menu Pelanggan:** `http://localhost:3000/menu`
+- **Dashboard Admin:** `http://localhost:3000/admin`
+- **Manajemen Pesanan:** `http://localhost:3000/admin/orders`
+- **Laporan Penjualan:** `http://localhost:3000/admin/reports`
