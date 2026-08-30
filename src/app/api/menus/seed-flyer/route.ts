@@ -106,15 +106,6 @@ export async function POST() {
         best_seller: true,
         visible: true,
       },
-      {
-        name: 'Game Spin Wheel',
-        category: 'Game',
-        price: 1000,
-        desc: 'Putar roda keberuntungan dan dapatkan hadiah menarik!',
-        img: '/photos/default.png',
-        best_seller: false,
-        visible: true,
-      },
     ];
 
     // Delete existing old menus and insert official ones

@@ -38,8 +38,8 @@ export const useMenuStore = create<MenuState>()(
         { id: "c2", name: "Menu Paket" },
         { id: "c3", name: "Kebab" },
         { id: "c4", name: "Minuman" },
-        { id: "c5", name: "Game" },
       ],
+
 
       products: [],
       addCategory: (category) => set((state) => ({ categories: [...state.categories, category] })),
