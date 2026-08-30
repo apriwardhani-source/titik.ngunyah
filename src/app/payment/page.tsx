@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCartStore } from "@/store/useCartStore";
 import { useRouter } from "next/navigation";
 import { formatPrice } from "@/lib/utils";
@@ -12,9 +12,10 @@ import {
   CheckCircle2, 
   AlertCircle, 
   ShieldCheck,
-  Sparkles,
-  Info,
-  ExternalLink
+  Clock,
+  Home,
+  Utensils,
+  PartyPopper
 } from "lucide-react";
 
 export default function PaymentPage() {
@@ -26,8 +27,35 @@ export default function PaymentPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // If cart is empty, redirect to menu
-  if (items.length === 0) {
+  // Success Order Popup State
+  const [successOrder, setSuccessOrder] = useState<{
+    order_number: string;
+    queue_number: string;
+    total: number;
+    payment_method: string;
+  } | null>(null);
+  const [countdown, setCountdown] = useState<number>(15);
+
+  // Countdown timer when success popup is open
+  useEffect(() => {
+    if (!successOrder) return;
+
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          router.push("/");
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [successOrder, router]);
+
+  // If cart is empty and not in success popup, redirect to menu
+  if (items.length === 0 && !successOrder) {
     if (typeof window !== "undefined") {
       router.replace("/menu");
     }
@@ -72,12 +100,20 @@ export default function PaymentPage() {
         throw new Error(data.message || "Gagal memproses pesanan");
       }
 
+      const orderData = data.data || {
+        order_number: data.order_number || "ORD-001",
+        queue_number: data.queue_number || "A-001",
+        total: total,
+        payment_method: selectedMethod,
+      };
+
       // Clear local cart
       clearCart();
 
-      // Redirect to queue page with queue ID
-      const queueNumber = data.queue_number || data.data?.queue_number || "A-001";
-      router.push(`/queue?id=${queueNumber}`);
+      // Show Popup Modal Immediately!
+      setSuccessOrder(orderData);
+      setCountdown(15);
+      setIsProcessing(false);
     } catch (err: any) {
       console.error("Checkout error:", err);
       setErrorMsg(err.message || "Terjadi kesalahan saat memproses pesanan. Silakan coba lagi.");
@@ -86,247 +122,302 @@ export default function PaymentPage() {
   };
 
   return (
-    <div className="flex h-[100dvh] max-h-[100dvh] bg-gradient-to-br from-[#FFFDF0] via-[#FFFBEB] to-[#FEF3C7] p-4 md:p-6 lg:p-8 overflow-hidden select-none font-sans">
-      <div className="max-w-6xl w-full mx-auto flex flex-col h-full min-h-0">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4 md:mb-6 shrink-0">
-          <div className="flex items-center gap-4 md:gap-5">
-            <button
-              onClick={() => router.push("/cart")}
-              className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-white shadow-sm border-2 border-amber-200 flex items-center justify-center text-gray-700 hover:bg-amber-50 hover:scale-105 active:scale-95 transition-all shrink-0"
-            >
-              <ArrowLeft size={24} />
-            </button>
-            <div>
-              <h1 className="text-2xl md:text-4xl font-black text-[#b80000] tracking-tight">
-                Metode Pembayaran
-              </h1>
-              <p className="text-gray-600 text-xs md:text-sm font-medium">
-                Pilih cara bayar dan selesaikan pesananmu
-              </p>
-            </div>
-          </div>
-
-          <div className="hidden sm:flex items-center gap-3 bg-white px-4 py-2 rounded-2xl border-2 border-[#ffde59] shadow-sm">
-            <div className="w-10 h-10 p-1 rounded-xl border border-[#ffde59] bg-white flex items-center justify-center">
-              <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
-            </div>
-            <span className="font-black text-sm text-gray-900">
-              TITIK<span className="text-[#b80000]">NGUNYAH</span>
-            </span>
+    <div className="flex flex-col h-[100dvh] max-h-[100dvh] bg-gradient-to-br from-[#FFFDF0] via-[#FFFBEB] to-[#FEF3C7] p-3 sm:p-5 md:p-6 overflow-hidden select-none font-sans relative">
+      {/* Top Header Bar */}
+      <div className="flex items-center justify-between mb-3 shrink-0">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <button
+            onClick={() => router.push("/cart")}
+            className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white shadow-sm border-2 border-amber-200 flex items-center justify-center text-gray-700 hover:bg-amber-50 active:scale-95 transition-all shrink-0"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <div>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-[#b80000] tracking-tight leading-tight">
+              Metode Pembayaran
+            </h1>
+            <p className="text-gray-600 text-[11px] sm:text-xs font-medium">
+              Pilih cara bayar dan selesaikan pesananmu
+            </p>
           </div>
         </div>
 
-        {/* Content Area */}
-        <div className="flex flex-col md:flex-row flex-1 gap-6 md:gap-8 min-h-0 pb-2 overflow-y-auto md:overflow-hidden touch-scroll">
-          {/* Left: Method Selection */}
-          <div className="w-full md:w-5/12 space-y-4 flex flex-col justify-start shrink-0">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg md:text-xl font-black text-gray-900 uppercase tracking-wider">
-                Pilih Cara Bayar
-              </h2>
-            </div>
+        <div className="flex items-center gap-2.5 bg-white px-3.5 py-1.5 rounded-xl border-2 border-[#ffde59] shadow-sm">
+          <div className="w-8 h-8 p-0.5 rounded-lg border border-[#ffde59] bg-white flex items-center justify-center">
+            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+          </div>
+          <span className="font-black text-xs sm:text-sm text-gray-900">
+            TITIK<span className="text-[#b80000]">NGUNYAH</span>
+          </span>
+        </div>
+      </div>
+
+      {/* Main Content Layout */}
+      <div className="flex flex-col md:flex-row flex-1 gap-4 md:gap-6 min-h-0 overflow-hidden">
+        {/* Left Column: Method Selection & Total */}
+        <div className="w-full md:w-5/12 flex flex-col justify-between shrink-0 space-y-3">
+          <div className="space-y-2.5">
+            <span className="text-xs font-black text-gray-800 uppercase tracking-wider block">
+              Pilihan Bayar:
+            </span>
 
             {/* QRIS Option */}
-            <motion.button
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
+            <button
+              type="button"
               onClick={() => {
                 setMethod("qris");
                 setErrorMsg(null);
               }}
-              className={`w-full p-5 rounded-3xl border-2 text-left flex items-center justify-between transition-all ${
+              className={`w-full p-3.5 sm:p-4 rounded-2xl border-2 text-left flex items-center justify-between transition-all ${
                 method === "qris"
-                  ? "border-[#b80000] bg-red-50/90 shadow-lg ring-2 ring-[#ffde59]"
-                  : "border-amber-200/80 bg-white hover:border-amber-300 shadow-sm"
+                  ? "border-[#b80000] bg-red-50/90 shadow-md ring-2 ring-[#ffde59]"
+                  : "border-amber-200 bg-white hover:border-amber-300 shadow-sm"
               }`}
             >
-              <div className="flex items-center gap-4">
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${
+              <div className="flex items-center gap-3">
+                <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
                   method === "qris" ? "bg-[#b80000] text-[#ffde59]" : "bg-amber-100 text-amber-900"
                 }`}>
-                  <QrCode size={30} />
+                  <QrCode size={24} />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-xl font-black text-gray-900">QRIS Statis</h3>
+                    <h3 className="text-base sm:text-lg font-black text-gray-900 leading-tight">QRIS Statis</h3>
                     <span className="bg-[#ffde59] text-[#b80000] text-[10px] font-black px-2 py-0.5 rounded-full uppercase">
                       Praktis
                     </span>
                   </div>
-                  <p className="text-gray-500 text-xs mt-0.5">BCA, GoPay, OVO, DANA, ShopeePay, Mandiri, BRI, dll</p>
+                  <p className="text-gray-500 text-[11px]">BCA, GoPay, OVO, DANA, ShopeePay, Mandiri, dll</p>
                 </div>
               </div>
-              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${
+              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
                 method === "qris" ? "border-[#b80000] bg-[#b80000]" : "border-gray-300"
               }`}>
                 {method === "qris" && <div className="w-2 h-2 bg-[#ffde59] rounded-full" />}
               </div>
-            </motion.button>
+            </button>
 
             {/* Cash Option */}
-            <motion.button
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
+            <button
+              type="button"
               onClick={() => {
                 setMethod("cash");
                 setErrorMsg(null);
               }}
-              className={`w-full p-5 rounded-3xl border-2 text-left flex items-center justify-between transition-all ${
+              className={`w-full p-3.5 sm:p-4 rounded-2xl border-2 text-left flex items-center justify-between transition-all ${
                 method === "cash"
-                  ? "border-[#b80000] bg-red-50/90 shadow-lg ring-2 ring-[#ffde59]"
-                  : "border-amber-200/80 bg-white hover:border-amber-300 shadow-sm"
+                  ? "border-[#b80000] bg-red-50/90 shadow-md ring-2 ring-[#ffde59]"
+                  : "border-amber-200 bg-white hover:border-amber-300 shadow-sm"
               }`}
             >
-              <div className="flex items-center gap-4">
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${
+              <div className="flex items-center gap-3">
+                <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
                   method === "cash" ? "bg-[#b80000] text-[#ffde59]" : "bg-amber-100 text-amber-900"
                 }`}>
-                  <Banknote size={30} />
+                  <Banknote size={24} />
                 </div>
                 <div>
-                  <h3 className="text-xl font-black text-gray-900">Tunai di Kasir</h3>
-                  <p className="text-gray-500 text-xs mt-0.5">Bayar langsung dengan uang tunai ke kasir stand</p>
+                  <h3 className="text-base sm:text-lg font-black text-gray-900 leading-tight">Tunai di Kasir</h3>
+                  <p className="text-gray-500 text-[11px]">Bayar langsung dengan uang tunai di kasir stand</p>
                 </div>
               </div>
-              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${
+              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
                 method === "cash" ? "border-[#b80000] bg-[#b80000]" : "border-gray-300"
               }`}>
                 {method === "cash" && <div className="w-2 h-2 bg-[#ffde59] rounded-full" />}
               </div>
-            </motion.button>
-
-            {/* Total Payment Summary Box */}
-            <div className="bg-white p-5 rounded-3xl border-2 border-[#ffde59] shadow-md space-y-2 mt-2">
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block">
-                Total Pembayaran
-              </span>
-              <div className="flex items-baseline justify-between">
-                <span className="text-sm font-bold text-gray-600">
-                  {items.reduce((acc, i) => acc + i.quantity, 0)} Menu
-                </span>
-                <span className="text-3xl font-black text-[#b80000] tracking-tight">
-                  {formatPrice(total)}
-                </span>
-              </div>
-            </div>
-
-            {/* Security note */}
-            <div className="bg-amber-50/70 p-4 rounded-2xl border border-amber-200 flex items-center gap-3 text-gray-600 mt-auto">
-              <ShieldCheck size={28} className="text-emerald-600 shrink-0" />
-              <p className="text-xs leading-relaxed">
-                Pesanan otomatis dicatat dan langsung dikirim ke layar antrean dapur <strong>Titik Ngunyah</strong>.
-              </p>
-            </div>
+            </button>
           </div>
 
-          {/* Right: Payment Detail / Large Static QRIS Card */}
-          <div className="w-full md:w-7/12 bg-white rounded-[2.5rem] shadow-xl border-2 border-[#ffde59] p-6 md:p-8 flex flex-col items-center justify-between overflow-y-auto touch-scroll hide-scrollbar">
-            {errorMsg && (
-              <div className="w-full bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl flex items-center gap-3 mb-4 shrink-0">
-                <AlertCircle size={24} className="shrink-0" />
-                <p className="text-xs md:text-sm font-bold">{errorMsg}</p>
-              </div>
-            )}
+          {/* Total Payment Summary */}
+          <div className="bg-white p-4 rounded-2xl border-2 border-[#ffde59] shadow-sm">
+            <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">
+              Total Tagihan ({items.reduce((acc, i) => acc + i.quantity, 0)} Menu)
+            </span>
+            <span className="text-2xl sm:text-3xl font-black text-[#b80000] tracking-tight block mt-0.5">
+              {formatPrice(total)}
+            </span>
+          </div>
 
+          {/* Security Notice */}
+          <div className="bg-amber-50/80 p-3 rounded-xl border border-amber-200 flex items-center gap-2.5 text-gray-600">
+            <ShieldCheck size={22} className="text-emerald-600 shrink-0" />
+            <p className="text-[11px] leading-tight">
+              Pesanan langsung otomatis terhubung ke antrean dapur <strong>Titik Ngunyah</strong>.
+            </p>
+          </div>
+        </div>
+
+        {/* Right Column: Clean Large QRIS Standee & Action Button */}
+        <div className="w-full md:w-7/12 flex flex-col items-center justify-between min-h-0 h-full">
+          {errorMsg && (
+            <div className="w-full bg-red-50 border border-red-200 text-red-700 px-3.5 py-2 rounded-xl flex items-center gap-2 mb-2 shrink-0">
+              <AlertCircle size={18} className="shrink-0" />
+              <p className="text-xs font-bold">{errorMsg}</p>
+            </div>
+          )}
+
+          <div className="flex-1 w-full flex flex-col items-center justify-center min-h-0 py-1">
             <AnimatePresence mode="wait">
               {method === "qris" && (
                 <motion.div
-                  key="qris-card"
-                  initial={{ opacity: 0, scale: 0.95 }}
+                  key="qris-display"
+                  initial={{ opacity: 0, scale: 0.96 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="flex flex-col items-center w-full"
+                  exit={{ opacity: 0, scale: 0.96 }}
+                  className="flex flex-col items-center justify-center w-full h-full min-h-0"
                 >
-                  {/* Large Static QRIS Card Header */}
-                  <div className="text-center mb-3">
-                    <p className="text-xs font-black uppercase tracking-widest text-[#b80000]">
-                      Scan QRIS TITIK.NGUNYAH
-                    </p>
-                    <div className="inline-flex items-center gap-2 bg-[#b80000] text-[#ffde59] px-4 py-1 rounded-full font-black text-base md:text-lg mt-1 shadow-sm">
-                      <span>Nominal: {formatPrice(total)}</span>
-                    </div>
+                  {/* Nominal Badge */}
+                  <div className="bg-[#b80000] text-[#ffde59] px-5 py-1.5 rounded-full font-black text-sm sm:text-base mb-2 shadow-md flex items-center gap-2 shrink-0 border border-white/40">
+                    <span>Nominal Bayar:</span>
+                    <span className="text-white text-base sm:text-lg font-black">{formatPrice(total)}</span>
                   </div>
 
-                  {/* LARGE STATIC QRIS IMAGE CONTAINER */}
-                  <div className="bg-white p-2.5 rounded-3xl shadow-2xl border-4 border-[#b80000] max-w-[320px] sm:max-w-[360px] w-full flex flex-col items-center">
-                    <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden bg-white">
-                      <img
-                        src="/qris-statis.jpg"
-                        alt="QRIS Statis Titik Ngunyah"
-                        className="w-full h-full object-contain"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Step Instructions */}
-                  <div className="w-full bg-amber-50 border border-amber-200 rounded-2xl p-3.5 mt-4 text-amber-950 text-xs space-y-1 max-w-md">
-                    <p className="font-black flex items-center gap-1.5 text-[#b80000]">
-                      <Info size={15} /> Langkah Pembayaran:
-                    </p>
-                    <p>1. Buka aplikasi m-Banking atau E-Wallet apa saja.</p>
-                    <p>2. Arahkan kamera & scan kode QRIS statis di atas.</p>
-                    <p>3. Masukkan nominal persis <strong>{formatPrice(total)}</strong> lalu konfirmasi transfer.</p>
-                    <p>4. Tekan tombol <strong>Saya Sudah Bayar</strong> di bawah.</p>
+                  {/* DIRECT LARGE QRIS IMAGE */}
+                  <div className="flex-1 flex items-center justify-center min-h-0 w-full">
+                    <img
+                      src="/qris-statis.jpg"
+                      alt="QRIS Statis Titik Ngunyah"
+                      className="h-full max-h-[50dvh] sm:max-h-[52dvh] w-auto object-contain rounded-2xl shadow-xl border-2 border-[#b80000] bg-white"
+                    />
                   </div>
                 </motion.div>
               )}
 
               {method === "cash" && (
                 <motion.div
-                  key="cash-card"
-                  initial={{ opacity: 0, scale: 0.95 }}
+                  key="cash-display"
+                  initial={{ opacity: 0, scale: 0.96 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="flex flex-col items-center justify-center w-full my-auto text-center py-8"
+                  exit={{ opacity: 0, scale: 0.96 }}
+                  className="flex flex-col items-center justify-center w-full h-full text-center px-4"
                 >
-                  <div className="w-28 h-28 bg-red-100 rounded-full flex items-center justify-center text-5xl text-[#b80000] mb-6 shadow-inner border-2 border-[#ffde59]">
+                  <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center text-4xl text-[#b80000] mb-3 shadow-inner border-2 border-[#ffde59]">
                     💵
                   </div>
-                  <h4 className="text-2xl md:text-3xl font-black text-gray-900 mb-2">
+                  <h3 className="text-xl sm:text-2xl font-black text-gray-900">
                     Pembayaran Tunai di Kasir
-                  </h4>
-                  <div className="bg-[#b80000] text-[#ffde59] px-6 py-2 rounded-2xl text-2xl font-black my-3 shadow-md">
+                  </h3>
+                  <div className="bg-[#b80000] text-[#ffde59] px-5 py-1.5 rounded-xl text-xl font-black my-2 shadow-sm">
                     Total: {formatPrice(total)}
                   </div>
-                  <p className="text-gray-600 text-sm md:text-base max-w-md leading-relaxed mt-2 font-medium">
-                    Pesananmu akan langsung dikirim ke antrean dapur. Silakan menuju kasir untuk melakukan pembayaran dengan menyebutkan <strong>Nomor Antrean</strong> yang akan muncul.
+                  <p className="text-gray-600 text-xs sm:text-sm max-w-sm leading-relaxed mt-1">
+                    Silakan selesaikan pembayaran ke kasir stand dengan menyebutkan <strong>Nomor Antrean</strong> yang akan muncul setelah konfirmasi.
                   </p>
                 </motion.div>
               )}
             </AnimatePresence>
+          </div>
 
-            {/* Action Button */}
-            <div className="w-full mt-6 pt-2 shrink-0">
-              <button
-                onClick={() => method && handleProcessOrder(method)}
-                disabled={isProcessing || !method}
-                className="w-full bg-[#b80000] hover:bg-[#940000] text-[#ffde59] py-4 sm:py-5 rounded-2xl text-lg sm:text-2xl font-black shadow-xl shadow-red-900/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 border-2 border-[#ffde59]"
-              >
-                {isProcessing ? (
-                  <span className="flex items-center gap-3 text-white">
-                    <svg className="animate-spin h-7 w-7 text-white" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                    </svg>
-                    Memproses Antrean...
-                  </span>
-                ) : method === "qris" ? (
-                  <>
-                    <CheckCircle2 size={26} />
-                    <span>Saya Sudah Bayar (Dapatkan Antrean)</span>
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 size={26} />
-                    <span>Konfirmasi & Dapatkan Antrean</span>
-                  </>
-                )}
-              </button>
-            </div>
+          {/* Action Button */}
+          <div className="w-full pt-2 shrink-0">
+            <button
+              onClick={() => method && handleProcessOrder(method)}
+              disabled={isProcessing || !method}
+              className="w-full bg-[#b80000] hover:bg-[#940000] text-[#ffde59] py-3.5 sm:py-4 px-6 rounded-2xl text-base sm:text-xl font-black shadow-xl shadow-red-900/20 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2.5 border-2 border-[#ffde59]"
+            >
+              {isProcessing ? (
+                <span className="flex items-center gap-2.5 text-white">
+                  <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                  </svg>
+                  Memproses Antrean...
+                </span>
+              ) : method === "qris" ? (
+                <>
+                  <CheckCircle2 size={24} />
+                  <span>Saya Sudah Bayar (Dapatkan Antrean)</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 size={24} />
+                  <span>Konfirmasi & Dapatkan Antrean</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
       </div>
+
+      {/* ============================================================ */}
+      {/* POPUP MODAL NOMOR ANTREAN (INSTANT ON-SCREEN DISPLAY)         */}
+      {/* ============================================================ */}
+      <AnimatePresence>
+        {successOrder && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0, y: 30 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ type: "spring", damping: 22, stiffness: 280 }}
+              className="bg-white rounded-[2.5rem] shadow-2xl p-6 sm:p-8 max-w-lg w-full text-center border-4 border-[#ffde59] flex flex-col items-center relative overflow-hidden"
+            >
+              {/* Brand Top Header */}
+              <div className="flex items-center gap-2.5 bg-amber-50 px-4 py-1.5 rounded-full border border-amber-200 mb-4">
+                <div className="w-7 h-7 p-0.5 bg-white rounded-lg border border-[#ffde59] flex items-center justify-center">
+                  <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+                </div>
+                <span className="text-xs font-black text-gray-900 tracking-tight">
+                  TITIK<span className="text-[#b80000]">NGUNYAH</span>
+                </span>
+                <span className="text-[10px] font-bold text-[#b80000] uppercase tracking-wider">• Kiosk</span>
+              </div>
+
+              {/* Success Icon */}
+              <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-3 shadow-inner">
+                <CheckCircle2 size={38} />
+              </div>
+
+              <h2 className="text-2xl sm:text-3xl font-black text-gray-900 leading-tight">
+                Pesanan Diterima!
+              </h2>
+              <p className="text-gray-500 text-xs sm:text-sm font-medium mt-1">
+                Silakan simpan & foto nomor antrean ini
+              </p>
+
+              {/* BIG QUEUE NUMBER DISPLAY */}
+              <div className="w-full bg-gradient-to-br from-red-50 to-amber-50 py-5 px-6 rounded-3xl my-4 border-2 border-red-200 shadow-inner">
+                <span className="text-xs font-black text-gray-500 uppercase tracking-[0.25em] block mb-1">
+                  NOMOR ANTREAN KAMU
+                </span>
+                <p className="text-6xl sm:text-7xl font-black text-[#b80000] tracking-tight drop-shadow-sm font-sans">
+                  {successOrder.queue_number}
+                </p>
+                <div className="flex items-center justify-center gap-3 mt-2 text-xs font-bold text-gray-600">
+                  <span className="bg-white px-2.5 py-1 rounded-lg border border-gray-200">
+                    No. Order: {successOrder.order_number}
+                  </span>
+                  <span className="bg-[#ffde59] text-[#b80000] px-2.5 py-1 rounded-lg">
+                    {formatPrice(successOrder.total)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Estimated Time Info */}
+              <div className="flex items-center justify-center gap-2 bg-amber-50/80 text-gray-700 px-4 py-2.5 rounded-xl border border-amber-200 text-xs font-medium w-full mb-4">
+                <Clock size={16} className="text-[#b80000] animate-pulse shrink-0" />
+                <span>Estimasi waktu penyajian: <strong className="text-gray-900 font-bold">10 - 15 menit</strong></span>
+              </div>
+
+              {/* Finish Actions */}
+              <div className="w-full space-y-2">
+                <button
+                  onClick={() => router.push("/menu")}
+                  className="w-full bg-[#b80000] hover:bg-[#940000] text-[#ffde59] py-3.5 rounded-2xl font-black text-base shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 border-2 border-[#ffde59]"
+                >
+                  <Utensils size={18} />
+                  <span>Selesai & Pesan Lagi</span>
+                </button>
+
+                <p className="text-[11px] text-gray-400 font-medium">
+                  Kembali otomatis ke Beranda dalam <strong className="text-gray-700">{countdown}</strong> detik...
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
