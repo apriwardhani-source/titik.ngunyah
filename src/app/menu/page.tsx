@@ -1,102 +1,158 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useCartStore } from "@/store/useCartStore";
+import { useState, useMemo, useEffect } from "react";
 import { useMenuStore, Product } from "@/store/useMenuStore";
+import { useCartStore } from "@/store/useCartStore";
 import { formatPrice } from "@/lib/utils";
-import { Flame, Coffee, Utensils, Sparkles, Check, X, Plus, Minus } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  Sparkles, 
+  Plus, 
+  Flame, 
+  Coffee, 
+  Utensils, 
+  X, 
+  Check, 
+  ChevronRight, 
+  ShoppingBag,
+  Info,
+  Clock
+} from "lucide-react";
+import Link from "next/link";
 
 export default function MenuPage() {
-  const { categories, products, fetchMenus } = useMenuStore();
-  const [activeCategory, setActiveCategory] = useState("Rekomendasi");
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [qty, setQty] = useState(1);
-  const [notes, setNotes] = useState("");
-
-  // Option state
-  const [selectedKebab, setSelectedKebab] = useState<string>("");
-  const [selectedDrink, setSelectedDrink] = useState<string>("");
-  const [selectedSpicy, setSelectedSpicy] = useState<string>("Pedas 🌶️");
-  const [selectedMayo, setSelectedMayo] = useState<string>("Pake Mayo 🍶");
-  const [selectedExtra, setSelectedExtra] = useState<string>("");
-
-  const addItem = useCartStore((state) => state.addItem);
+  const { products, fetchMenus } = useMenuStore();
+  const { addItem, getTotalItems } = useCartStore();
 
   useEffect(() => {
     fetchMenus();
   }, [fetchMenus]);
 
-  // Merge categories from DB and default list
+  // Active Category State
+  const [activeCategory, setActiveCategory] = useState<string>("Semua Menu");
+
+  // Selected Product for Customization Modal
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  // Customization Choices State
+  const [selectedKebab, setSelectedKebab] = useState<string>("");
+  const [selectedDrink, setSelectedDrink] = useState<string>("");
+  const [selectedSpicy, setSelectedSpicy] = useState<string>("Pedas 🌶️");
+  const [selectedMayo, setSelectedMayo] = useState<string>("Pake Mayo 🍶");
+  const [selectedExtra, setSelectedExtra] = useState<string>("");
+  const [qty, setQty] = useState<number>(1);
+  const [notes, setNotes] = useState<string>("");
+
+  // Categories list
   const categoryList = useMemo(() => {
-    const list = ["Rekomendasi"];
-    const dbCategories = Array.from(new Set(products.map((p) => p.category).filter(Boolean)));
+    const unique = Array.from(new Set(products.map((p) => p.category)));
+    return ["Semua Menu", ...unique];
+  }, [products]);
 
-    if (dbCategories.length > 0) {
-      dbCategories.forEach((cat) => {
-        if (!list.includes(cat)) list.push(cat);
-      });
-    } else {
-      categories.forEach((cat) => {
-        if (!list.includes(cat.name)) list.push(cat.name);
-      });
-    }
-    return list;
-  }, [products, categories]);
-
+  // Filtered Products
   const filteredProducts = useMemo(() => {
-    if (activeCategory === "Rekomendasi") {
-      return products.filter((p) => p.best_seller && p.visible);
-    }
-    return products.filter((p) => p.category === activeCategory && p.visible);
+    if (activeCategory === "Semua Menu") return products;
+    return products.filter((p) => p.category === activeCategory);
   }, [products, activeCategory]);
 
-  // Helper to determine available options based on product name/category
+  // Handle open customization modal
+  const handleOpenDetail = (product: Product) => {
+    setSelectedProduct(product);
+    setQty(1);
+    setNotes("");
+    setSelectedExtra("");
+
+    const nameLower = product.name.toLowerCase();
+    const isPaket = product.category.toLowerCase().includes("paket") || nameLower.includes("paket");
+    const isKebab = isPaket || nameLower.includes("kebab") || product.category.toLowerCase().includes("kebab");
+    const isDrinkOnly = product.category.toLowerCase().includes("minum") && !isPaket;
+
+    // Reset and initialize defaults
+    if (isPaket) {
+      if (nameLower.includes("mix")) {
+        setSelectedKebab("Mix (Daging + Sosis)");
+      } else if (nameLower.includes("asik")) {
+        setSelectedKebab("Kebab Extra Daging");
+      } else if (nameLower.includes("sultan")) {
+        setSelectedKebab("Kebab Extra Mix");
+      } else {
+        setSelectedKebab("Kebab Daging");
+      }
+
+      if (nameLower.includes("sultan")) {
+        setSelectedDrink("Es Squash Jeruk");
+      } else {
+        setSelectedDrink("Teh Es");
+      }
+    } else {
+      setSelectedKebab("");
+      setSelectedDrink("");
+    }
+
+    if (isKebab) {
+      setSelectedSpicy("Pedas 🌶️");
+      setSelectedMayo("Pake Mayo 🍶");
+    } else {
+      setSelectedSpicy("");
+      setSelectedMayo("");
+    }
+  };
+
+  // Determine options for current modal product
   const productOptions = useMemo(() => {
     if (!selectedProduct) return null;
-
     const nameLower = selectedProduct.name.toLowerCase();
     const isPaket = selectedProduct.category.toLowerCase().includes("paket") || nameLower.includes("paket");
     const isKebab = isPaket || nameLower.includes("kebab") || selectedProduct.category.toLowerCase().includes("kebab");
     const isDrinkOnly = selectedProduct.category.toLowerCase().includes("minum") && !isPaket;
 
-    // 1. Kebab Options
-    let kebabOptions: string[] = [];
-    if (nameLower.includes("ngunyah mix") || (isPaket && nameLower.includes("mix"))) {
-      kebabOptions = ["Daging Biasa", "Sosis", "Mix (Daging + Sosis)"];
-    } else if (nameLower.includes("ngunyah asik") || (isPaket && nameLower.includes("asik"))) {
-      kebabOptions = ["Extra Daging", "Extra Sosis", "Extra Mix (Daging + Sosis)"];
-    } else if (nameLower.includes("sultan")) {
-      kebabOptions = ["Extra Daging", "Extra Sosis", "Extra Mix (Daging + Sosis)"];
-    } else if (nameLower.includes("puas")) {
-      kebabOptions = ["Daging Puas", "Sosis Puas", "Mix Puas"];
-    } else if (isPaket && isKebab) {
-      kebabOptions = ["Daging", "Sosis", "Mix (Daging + Sosis)"];
-    }
+    let kebabChoices: string[] = [];
+    let drinkChoices: string[] = [];
+    let extraChoices: { label: string; price: number }[] = [];
+    let spicyOptions: string[] = [];
+    let mayoOptions: string[] = [];
 
-    // 2. Extra Options (for Kebab Daging Satuan)
-    let extraOptions: { label: string; extraPrice: number }[] = [];
-    if (nameLower === "kebab daging" || (nameLower.includes("kebab daging") && !isPaket)) {
-      extraOptions = [
-        { label: "Porsi Reguler", extraPrice: 0 },
-        { label: "Extra Daging (+Rp2.000)", extraPrice: 2000 },
-      ];
-    }
-
-    // 3. Drink Options (for Packages)
-    let drinkOptions: string[] = [];
     if (isPaket) {
-      if (nameLower.includes("sultan")) {
-        drinkOptions = ["Es Squash Jeruk", "Es Moka"];
+      if (nameLower.includes("mix")) {
+        kebabChoices = [
+          "Kebab Daging Biasa",
+          "Kebab Sosis Biasa",
+          "Mix (Daging + Sosis)",
+        ];
+        drinkChoices = ["Air Es (Acqua)", "Teh Es"];
+      } else if (nameLower.includes("asik")) {
+        kebabChoices = [
+          "Kebab Extra Daging",
+          "Kebab Extra Sosis",
+          "Kebab Extra Mix (Daging + Sosis)",
+        ];
+        drinkChoices = ["Air Es (Acqua)", "Teh Es"];
+      } else if (nameLower.includes("puas")) {
+        kebabChoices = ["Kebab Daging Porsi Puas"];
+        drinkChoices = ["Air Es (Acqua)", "Teh Es"];
+      } else if (nameLower.includes("sultan")) {
+        kebabChoices = [
+          "Kebab Extra Daging",
+          "Kebab Extra Sosis",
+          "Kebab Extra Mix",
+        ];
+        drinkChoices = ["Es Squash Jeruk", "Es Moka"];
       } else {
-        drinkOptions = ["Teh Es", "Air Es (Acqua con ghiaccio)"];
+        kebabChoices = ["Kebab Daging", "Kebab Sosis", "Kebab Mix"];
+        drinkChoices = ["Air Es", "Teh Es"];
       }
     }
 
-    // 4. Taste / Spicy Level Options (for all Kebabs & Packages)
-    let spicyOptions: string[] = [];
-    let mayoOptions: string[] = [];
-    if (isKebab && !isDrinkOnly) {
+    if (isKebab && !isPaket) {
+      if (nameLower.includes("daging") && !nameLower.includes("mix")) {
+        extraChoices = [
+          { label: "Porsi Standar (13K)", price: 0 },
+          { label: "Extra Daging (+Rp2.000)", price: 2000 },
+        ];
+      }
+    }
+
+    if (!isDrinkOnly) {
       spicyOptions = ["Pedas 🌶️", "Ekstra Pedas 🔥🔥", "Manis 🍯"];
       mayoOptions = ["Pake Mayo 🍶", "Tanpa Mayo 🚫"];
     }
@@ -104,70 +160,16 @@ export default function MenuPage() {
     return {
       isPaket,
       isKebab,
-      kebabOptions,
-      drinkOptions,
+      isDrinkOnly,
+      kebabChoices,
+      drinkChoices,
+      extraChoices,
       spicyOptions,
       mayoOptions,
-      extraOptions,
     };
   }, [selectedProduct]);
 
-  // Handle open detail and set default selections
-  const handleOpenDetail = (product: Product) => {
-    setSelectedProduct(product);
-    setQty(1);
-    setNotes("");
-
-    const nameLower = product.name.toLowerCase();
-    const isPaket = product.category.toLowerCase().includes("paket") || nameLower.includes("paket");
-
-    // Set default kebab
-    if (nameLower.includes("ngunyah mix") || (isPaket && nameLower.includes("mix"))) {
-      setSelectedKebab("Mix (Daging + Sosis)");
-    } else if (nameLower.includes("ngunyah asik") || (isPaket && nameLower.includes("asik"))) {
-      setSelectedKebab("Extra Mix (Daging + Sosis)");
-    } else if (nameLower.includes("sultan")) {
-      setSelectedKebab("Extra Mix (Daging + Sosis)");
-    } else if (nameLower.includes("puas")) {
-      setSelectedKebab("Daging Puas");
-    } else if (isPaket) {
-      setSelectedKebab("Daging");
-    } else {
-      setSelectedKebab("");
-    }
-
-
-    // Set default drink
-    if (isPaket) {
-      if (nameLower.includes("sultan")) {
-        setSelectedDrink("Es Squash Jeruk");
-      } else {
-        setSelectedDrink("Teh Es");
-      }
-    } else {
-      setSelectedDrink("");
-    }
-
-    const isDrinkOnly = product.category.toLowerCase().includes("minum") && !isPaket;
-
-    // Set default spicy & mayo (only for kebabs/packages, NOT drinks)
-    if (!isDrinkOnly) {
-      setSelectedSpicy("Pedas 🌶️");
-      setSelectedMayo("Pake Mayo 🍶");
-    } else {
-      setSelectedSpicy("");
-      setSelectedMayo("");
-    }
-
-    // Set default extra
-    if (nameLower === "kebab daging" || (nameLower.includes("kebab daging") && !isPaket)) {
-      setSelectedExtra("Porsi Reguler");
-    } else {
-      setSelectedExtra("");
-    }
-  };
-
-  // Calculate current unit price including extras
+  // Calculate unit price including extras
   const currentUnitPrice = useMemo(() => {
     if (!selectedProduct) return 0;
     let price = selectedProduct.price;
@@ -183,7 +185,6 @@ export default function MenuPage() {
     const isPaket = selectedProduct.category.toLowerCase().includes("paket") || selectedProduct.name.toLowerCase().includes("paket");
     const isDrinkOnly = selectedProduct.category.toLowerCase().includes("minum") && !isPaket;
 
-    // Generate unique ID for cart grouping based on options
     const optionKey = [
       selectedProduct.id,
       selectedKebab,
@@ -215,104 +216,171 @@ export default function MenuPage() {
     setSelectedProduct(null);
   };
 
+  const totalCartCount = getTotalItems();
+
   return (
-    <div className="flex h-[100dvh] max-h-[100dvh] bg-[#FFFBEB]/30 overflow-hidden select-none">
-      {/* Sidebar Categories */}
-      <div className="w-1/4 max-w-sm bg-white shadow-xl flex flex-col z-10 shrink-0 border-r border-amber-100">
-        <div className="p-5 md:p-6 pb-4 border-b border-gray-100 flex items-center gap-3 bg-gradient-to-r from-red-50/50 to-white">
-          <div className="w-12 h-12 bg-white rounded-2xl border-2 border-[#FBC02D] p-1.5 shadow-sm shrink-0 flex items-center justify-center">
+    <div className="flex h-[100dvh] max-h-[100dvh] bg-gradient-to-br from-[#FFFDF0] via-[#FFFBEB] to-[#FEF3C7] overflow-hidden select-none relative font-sans">
+      {/* Background Decorative Food Lights */}
+      <div className="absolute top-10 right-1/4 w-96 h-96 bg-[#ffde59]/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-10 right-10 w-96 h-96 bg-[#b80000]/10 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Sidebar Navigation (Merah #b80000 dengan aksen Kuning #ffde59) */}
+      <div className="w-1/4 max-w-sm bg-[#b80000] shadow-2xl flex flex-col z-20 shrink-0 border-r-4 border-[#ffde59] text-white">
+        {/* Brand Header */}
+        <div className="p-5 md:p-6 border-b border-red-900/50 bg-[#940000] flex items-center gap-3.5">
+          <div className="w-14 h-14 bg-white rounded-2xl border-2 border-[#ffde59] p-1.5 shadow-md shrink-0 flex items-center justify-center">
             <img src="/logo.png" alt="Logo Titik Ngunyah" className="w-full h-full object-contain" />
           </div>
           <div>
-            <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none">
-              TITIK<span className="text-[#E53935]">NGUNYAH</span>
+            <h1 className="text-xl md:text-2xl font-black tracking-tight leading-none text-white">
+              TITIK<span className="text-[#ffde59]">NGUNYAH</span>
             </h1>
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#E53935] bg-red-50 px-2 py-0.5 rounded-full inline-block mt-1">
-              Kiosk Menu
-            </span>
+            <p className="text-[10px] md:text-xs font-black uppercase tracking-wider text-[#ffde59] mt-1 bg-black/20 px-2 py-0.5 rounded-full inline-block">
+              Enaknya Bikin Penasaran!
+            </p>
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto touch-scroll hide-scrollbar py-4 px-4 md:px-6 space-y-3 md:space-y-4">
-          {categoryList.map((catName) => (
-            <button
-              key={catName}
-              onClick={() => setActiveCategory(catName)}
-              className={`w-full text-left px-5 py-4 md:px-6 md:py-5 rounded-2xl text-lg md:text-xl font-bold transition-all duration-300 flex items-center justify-between ${
-                activeCategory === catName
-                  ? "bg-[#E53935] text-white shadow-lg shadow-red-500/30 scale-[1.02] ring-2 ring-[#FBC02D]"
-                  : "bg-gray-50 text-gray-700 hover:bg-red-50/60 hover:text-[#E53935]"
-              }`}
-            >
-              <span>{catName}</span>
-              {activeCategory === catName && <span className="text-xl text-[#FEF08A]">➔</span>}
-            </button>
-          ))}
+
+        {/* Category List */}
+        <div className="flex-1 overflow-y-auto touch-scroll hide-scrollbar py-5 px-3 md:px-5 space-y-2.5">
+          <div className="px-3 pb-1 text-[11px] font-black uppercase tracking-widest text-[#ffde59]/80">
+            Kategori Menu
+          </div>
+
+          {categoryList.map((catName) => {
+            const isActive = activeCategory === catName;
+            return (
+              <button
+                key={catName}
+                onClick={() => setActiveCategory(catName)}
+                className={`w-full text-left px-5 py-4 rounded-2xl text-base md:text-lg font-black transition-all duration-200 flex items-center justify-between shadow-sm ${
+                  isActive
+                    ? "bg-[#ffde59] text-[#b80000] shadow-xl shadow-black/20 scale-[1.03] ring-2 ring-white"
+                    : "bg-white/10 text-white/90 hover:bg-white/20 hover:text-white"
+                }`}
+              >
+                <span>{catName}</span>
+                {isActive && <span className="text-xl font-black text-[#b80000]">➔</span>}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Sidebar Footer Link */}
+        <div className="p-4 border-t border-red-900/50 bg-[#940000]/70 flex items-center justify-between text-xs text-[#ffde59] font-bold">
+          <span>Bazar Technopreneurship 2026</span>
+          <Link href="/" className="hover:underline opacity-80">Home</Link>
         </div>
       </div>
 
-      {/* Main Product Grid */}
-      <div className="flex-1 p-6 md:p-8 overflow-y-auto touch-scroll hide-scrollbar">
-        <div className="flex items-center justify-between mb-6 md:mb-8">
-          <div>
-            <h3 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight">{activeCategory}</h3>
-            <p className="text-gray-500 text-base mt-1">Pilih menu lezat untuk ditambahkan ke keranjang</p>
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
+        {/* Top Promotional Header Bar */}
+        <div className="bg-[#b80000] text-white px-6 py-4 shadow-md flex items-center justify-between shrink-0 border-b border-[#ffde59]/30">
+          <div className="flex items-center gap-4">
+            <div className="bg-[#ffde59] text-[#b80000] px-4 py-1.5 rounded-full font-black text-xs md:text-sm uppercase tracking-wider shadow-sm transform -rotate-1">
+              ★ ENAKNYA BIKIN PENASARAN! ★
+            </div>
+            <p className="text-xs md:text-sm font-semibold text-[#ffde59] hidden sm:block">
+              Panggang Fresh • Porsi Puas • Saus Spesial
+            </p>
           </div>
-          <span className="text-gray-400 font-semibold text-sm">
-            {filteredProducts.length} Pilihan Menu
-          </span>
+
+          <div className="flex items-center gap-3">
+            <Link
+              href="/cart"
+              className="bg-[#ffde59] hover:bg-[#facc15] text-[#b80000] px-4 py-2 rounded-xl font-black text-sm flex items-center gap-2 shadow-md transition-all active:scale-95"
+            >
+              <ShoppingBag size={18} />
+              <span>Keranjang</span>
+              {totalCartCount > 0 && (
+                <span className="bg-[#b80000] text-[#ffde59] text-xs px-2 py-0.5 rounded-full font-black">
+                  {totalCartCount}
+                </span>
+              )}
+            </Link>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 pb-32">
-          {filteredProducts.map((product) => (
-            <motion.div
-              key={product.id}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => handleOpenDetail(product)}
-              className="bg-white rounded-[2rem] shadow-sm hover:shadow-xl transition-all cursor-pointer overflow-hidden border border-gray-100 flex flex-col h-[460px] group"
-            >
-              <div className="relative h-60 w-full bg-gray-100 overflow-hidden">
-                <img
-                  src={product.img}
-                  alt={product.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-                {product.best_seller && (
-                  <div className="absolute top-4 left-4 bg-[#E53935] text-white px-3.5 py-1 rounded-full text-xs font-black shadow-md uppercase tracking-wider flex items-center gap-1">
-                    <Sparkles size={14} /> Terlaris
-                  </div>
-                )}
-                {product.category.toLowerCase().includes("paket") && (
-                  <div className="absolute top-4 right-4 bg-gray-900/80 backdrop-blur text-white px-3 py-1 rounded-full text-xs font-bold">
-                    Combo Hemat
-                  </div>
-                )}
-              </div>
+        {/* Product Cards Grid Area */}
+        <div className="flex-1 p-6 md:p-8 overflow-y-auto touch-scroll hide-scrollbar">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-black text-[#b80000] tracking-tight">
+                {activeCategory}
+              </h2>
+              <p className="text-gray-600 text-sm font-medium mt-0.5">
+                Sentuh menu favoritmu untuk memilih varian rasa & tingkat kepedasan
+              </p>
+            </div>
+            <div className="bg-white/80 border border-[#ffde59] px-4 py-1.5 rounded-full text-xs font-black text-[#b80000] shadow-sm">
+              {filteredProducts.length} Pilihan Menu
+            </div>
+          </div>
 
-              <div className="p-6 flex flex-col flex-1 justify-between">
-                <div>
-                  <h4 className="text-2xl font-bold text-gray-900 group-hover:text-[#E53935] transition-colors line-clamp-1">
-                    {product.name}
-                  </h4>
-                  <p className="text-gray-500 text-sm line-clamp-2 mt-2 leading-relaxed">{product.desc}</p>
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 md:gap-7 pb-36">
+            {filteredProducts.map((product) => (
+              <motion.div
+                key={product.id}
+                whileHover={{ scale: 1.02, y: -4 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => handleOpenDetail(product)}
+                className="bg-white rounded-[2rem] shadow-md hover:shadow-2xl transition-all cursor-pointer overflow-hidden border-2 border-[#ffde59]/70 hover:border-[#ffde59] flex flex-col h-[460px] group relative"
+              >
+                {/* Image Container */}
+                <div className="relative h-60 w-full bg-amber-50 overflow-hidden">
+                  <img
+                    src={product.img}
+                    alt={product.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+
+                  {/* Best Seller Ribbon Tag */}
+                  {product.best_seller && (
+                    <div className="absolute top-3 left-3 bg-[#ffde59] text-[#b80000] px-3.5 py-1 rounded-full text-xs font-black shadow-lg uppercase tracking-wider flex items-center gap-1 border border-white/60">
+                      <Sparkles size={13} /> Terlaris
+                    </div>
+                  )}
+
+                  {/* Category Pill Tag */}
+                  {product.category.toLowerCase().includes("paket") && (
+                    <div className="absolute top-3 right-3 bg-[#b80000] text-white px-3 py-1 rounded-full text-xs font-black shadow-md">
+                      Combo Hemat
+                    </div>
+                  )}
                 </div>
 
-                <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-50">
+                {/* Card Content */}
+                <div className="p-5 md:p-6 flex flex-col flex-1 justify-between bg-gradient-to-b from-white to-amber-50/20">
                   <div>
-                    <span className="text-xs text-gray-400 font-semibold block uppercase tracking-wider">Harga</span>
-                    <span className="text-2xl font-black text-[#E53935]">{formatPrice(product.price)}</span>
+                    <h3 className="text-xl md:text-2xl font-black text-gray-900 group-hover:text-[#b80000] transition-colors line-clamp-1">
+                      {product.name}
+                    </h3>
+                    <p className="text-gray-500 text-xs md:text-sm line-clamp-2 mt-1.5 leading-relaxed">
+                      {product.desc}
+                    </p>
                   </div>
-                  <button className="bg-gray-900 group-hover:bg-[#E53935] text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl font-bold transition-all shadow-md active:scale-90">
-                    <Plus size={24} />
-                  </button>
+
+                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-amber-100">
+                    <div>
+                      <span className="text-[10px] text-gray-400 font-bold block uppercase tracking-wider">Harga</span>
+                      <span className="bg-[#b80000] text-[#ffde59] px-3.5 py-1 rounded-xl text-lg md:text-xl font-black shadow-sm tracking-tight inline-block">
+                        {formatPrice(product.price)}
+                      </span>
+                    </div>
+
+                    <button className="bg-[#ffde59] hover:bg-[#facc15] text-[#b80000] w-12 h-12 rounded-full flex items-center justify-center font-black transition-all shadow-md active:scale-90 border-2 border-white">
+                      <Plus size={24} />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Slide-over Detail & Package Option Builder */}
+      {/* Slide-over Detail & Package Option Builder Modal */}
       <AnimatePresence>
         {selectedProduct && productOptions && (
           <>
@@ -329,143 +397,107 @@ export default function MenuPage() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed top-0 right-0 w-full max-w-2xl h-full bg-white z-50 shadow-2xl flex flex-col overflow-hidden"
+              className="fixed top-0 right-0 w-full max-w-xl md:max-w-2xl h-[100dvh] bg-white z-50 shadow-2xl flex flex-col justify-between overflow-hidden"
             >
-              {/* Product Banner */}
-              <div className="relative h-72 w-full bg-gray-900 shrink-0 overflow-hidden">
-                <img
-                  src={selectedProduct.img}
-                  alt={selectedProduct.name}
-                  className="w-full h-full object-cover opacity-90"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                <button
-                  onClick={() => setSelectedProduct(null)}
-                  className="absolute top-6 right-6 bg-white/90 backdrop-blur text-gray-900 w-12 h-12 rounded-full flex items-center justify-center shadow-lg hover:bg-white active:scale-90 transition-all z-10"
-                >
-                  <X size={24} />
-                </button>
-                <div className="absolute bottom-6 left-8 right-8 text-white">
-                  <span className="text-xs font-bold uppercase tracking-widest text-[#FFCDD2] bg-white/20 px-3 py-1 rounded-full backdrop-blur">
+              {/* Modal Top Bar */}
+              <div className="p-5 md:p-6 bg-[#b80000] text-white flex items-center justify-between shrink-0 border-b-2 border-[#ffde59]">
+                <div>
+                  <h3 className="text-2xl font-black text-white">{selectedProduct.name}</h3>
+                  <span className="text-xs font-bold text-[#ffde59] uppercase tracking-wider">
                     {selectedProduct.category}
                   </span>
-                  <h2 className="text-3xl font-black mt-2 tracking-tight">{selectedProduct.name}</h2>
                 </div>
+                <button
+                  onClick={() => setSelectedProduct(null)}
+                  className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors"
+                >
+                  <X size={20} />
+                </button>
               </div>
 
-              {/* Scrollable Option Selections */}
-              <div className="p-8 flex-1 overflow-y-auto touch-scroll hide-scrollbar space-y-8">
-                {/* Description */}
-                {selectedProduct.desc && (
-                  <p className="text-lg text-gray-600 leading-relaxed bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                    {selectedProduct.desc}
-                  </p>
-                )}
-
-                {/* 1. Kebab Selection Option (for Packages) */}
-                {productOptions.kebabOptions.length > 1 && (
+              {/* Modal Scrollable Body */}
+              <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 touch-scroll hide-scrollbar">
+                {/* 1. Kebab Choice in Package */}
+                {productOptions.kebabChoices.length > 0 && (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <h4 className="text-lg font-black text-gray-900 flex items-center gap-2">
-                        <Utensils size={20} className="text-[#E53935]" />
-                        1. Pilih Isian Kebab <span className="text-[#E53935] text-sm">*Wajib</span>
+                        <Utensils size={20} className="text-[#b80000]" />
+                        Pilih Varian Kebab <span className="text-[#b80000] text-sm">*Wajib</span>
                       </h4>
-                      <span className="text-xs font-bold text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full">
-                        Pilih 1
-                      </span>
                     </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      {productOptions.kebabOptions.map((opt) => (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {productOptions.kebabChoices.map((choice) => (
                         <button
-                          key={opt}
+                          key={choice}
                           type="button"
-                          onClick={() => setSelectedKebab(opt)}
+                          onClick={() => setSelectedKebab(choice)}
                           className={`p-4 rounded-2xl border-2 text-left font-bold transition-all flex items-center justify-between ${
-                            selectedKebab === opt
-                              ? "border-[#E53935] bg-red-50/80 text-[#E53935] shadow-sm"
+                            selectedKebab === choice
+                              ? "border-[#b80000] bg-red-50 text-[#b80000] shadow-sm ring-2 ring-[#ffde59]"
                               : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
                           }`}
                         >
-                          <span className="text-base">{opt}</span>
-                          <div
-                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                              selectedKebab === opt ? "border-[#E53935] bg-[#E53935]" : "border-gray-300"
-                            }`}
-                          >
-                            {selectedKebab === opt && <Check size={14} className="text-white" />}
-                          </div>
+                          <span className="text-sm md:text-base">{choice}</span>
+                          {selectedKebab === choice && <Check size={18} className="text-[#b80000]" />}
                         </button>
                       ))}
                     </div>
                   </div>
                 )}
 
-                {/* 2. Drink Selection Option (for Packages) */}
-                {productOptions.drinkOptions.length > 0 && (
+                {/* 2. Drink Choice in Package */}
+                {productOptions.drinkChoices.length > 0 && (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <h4 className="text-lg font-black text-gray-900 flex items-center gap-2">
-                        <Coffee size={20} className="text-[#E53935]" />
-                        2. Pilih Minuman Segar <span className="text-[#E53935] text-sm">*Wajib</span>
+                        <Coffee size={20} className="text-[#b80000]" />
+                        Pilih Minuman Pendamping <span className="text-[#b80000] text-sm">*Wajib</span>
                       </h4>
-                      <span className="text-xs font-bold text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full">
-                        Pilih 1
-                      </span>
                     </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {productOptions.drinkOptions.map((drink) => (
+                    <div className="grid grid-cols-2 gap-3">
+                      {productOptions.drinkChoices.map((drink) => (
                         <button
                           key={drink}
                           type="button"
                           onClick={() => setSelectedDrink(drink)}
                           className={`p-4 rounded-2xl border-2 text-left font-bold transition-all flex items-center justify-between ${
                             selectedDrink === drink
-                              ? "border-[#E53935] bg-red-50/80 text-[#E53935] shadow-sm"
+                              ? "border-[#b80000] bg-red-50 text-[#b80000] shadow-sm ring-2 ring-[#ffde59]"
                               : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
                           }`}
                         >
-                          <span className="text-base">{drink}</span>
-                          <div
-                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                              selectedDrink === drink ? "border-[#E53935] bg-[#E53935]" : "border-gray-300"
-                            }`}
-                          >
-                            {selectedDrink === drink && <Check size={14} className="text-white" />}
-                          </div>
+                          <span className="text-sm md:text-base">{drink}</span>
+                          {selectedDrink === drink && <Check size={18} className="text-[#b80000]" />}
                         </button>
                       ))}
                     </div>
                   </div>
                 )}
 
-                {/* 3. Extra Options (for Kebab Daging Satuan) */}
-                {productOptions.extraOptions.length > 0 && (
+                {/* 3. Extra Meat Option for Single Kebab */}
+                {productOptions.extraChoices.length > 0 && (
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-lg font-black text-gray-900 flex items-center gap-2">
-                        <Sparkles size={20} className="text-[#E53935]" />
-                        Pilihan Porsi Daging
-                      </h4>
-                    </div>
-
+                    <h4 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                      <Sparkles size={20} className="text-[#b80000]" />
+                      Pilihan Porsi Daging
+                    </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {productOptions.extraOptions.map((extra) => (
+                      {productOptions.extraChoices.map((extra) => (
                         <button
                           key={extra.label}
                           type="button"
                           onClick={() => setSelectedExtra(extra.label)}
                           className={`p-4 rounded-2xl border-2 text-left font-bold transition-all flex items-center justify-between ${
                             selectedExtra === extra.label
-                              ? "border-[#E53935] bg-red-50/80 text-[#E53935] shadow-sm"
+                              ? "border-[#b80000] bg-red-50 text-[#b80000] shadow-sm ring-2 ring-[#ffde59]"
                               : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
                           }`}
                         >
-                          <span className="text-base">{extra.label}</span>
+                          <span className="text-sm md:text-base">{extra.label}</span>
                           <div
                             className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                              selectedExtra === extra.label ? "border-[#E53935] bg-[#E53935]" : "border-gray-300"
+                              selectedExtra === extra.label ? "border-[#b80000] bg-[#b80000]" : "border-gray-300"
                             }`}
                           >
                             {selectedExtra === extra.label && <Check size={14} className="text-white" />}
@@ -481,8 +513,8 @@ export default function MenuPage() {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <h4 className="text-lg font-black text-gray-900 flex items-center gap-2">
-                        <Flame size={20} className="text-[#E53935]" />
-                        Pilihan Rasa / Pedas <span className="text-[#E53935] text-sm">*Wajib</span>
+                        <Flame size={20} className="text-[#b80000]" />
+                        Pilihan Rasa / Pedas <span className="text-[#b80000] text-sm">*Wajib</span>
                       </h4>
                     </div>
 
@@ -494,11 +526,11 @@ export default function MenuPage() {
                           onClick={() => setSelectedSpicy(lvl)}
                           className={`p-4 rounded-2xl border-2 text-center font-bold transition-all flex flex-col items-center justify-center gap-1 ${
                             selectedSpicy === lvl
-                              ? "border-[#E53935] bg-red-50/80 text-[#E53935] shadow-sm ring-2 ring-red-100"
+                              ? "border-[#b80000] bg-red-50 text-[#b80000] shadow-sm ring-2 ring-[#ffde59]"
                               : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
                           }`}
                         >
-                          <span className="text-base">{lvl}</span>
+                          <span className="text-sm md:text-base">{lvl}</span>
                         </button>
                       ))}
                     </div>
@@ -510,8 +542,8 @@ export default function MenuPage() {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <h4 className="text-lg font-black text-gray-900 flex items-center gap-2">
-                        <Sparkles size={20} className="text-[#E53935]" />
-                        Pilihan Mayonaise <span className="text-[#E53935] text-sm">*Wajib</span>
+                        <Sparkles size={20} className="text-[#b80000]" />
+                        Pilihan Mayonaise <span className="text-[#b80000] text-sm">*Wajib</span>
                       </h4>
                     </div>
 
@@ -523,56 +555,59 @@ export default function MenuPage() {
                           onClick={() => setSelectedMayo(m)}
                           className={`p-4 rounded-2xl border-2 text-center font-bold transition-all flex items-center justify-center gap-2 ${
                             selectedMayo === m
-                              ? "border-[#E53935] bg-red-50/80 text-[#E53935] shadow-sm ring-2 ring-red-100"
+                              ? "border-[#b80000] bg-red-50 text-[#b80000] shadow-sm ring-2 ring-[#ffde59]"
                               : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
                           }`}
                         >
-                          <span className="text-base">{m}</span>
-                          {selectedMayo === m && <Check size={16} className="text-[#E53935]" />}
+                          <span className="text-sm md:text-base">{m}</span>
+                          {selectedMayo === m && <Check size={16} className="text-[#b80000]" />}
                         </button>
                       ))}
                     </div>
                   </div>
                 )}
 
-                {/* 5. Custom Notes */}
+                {/* 6. Custom Notes */}
                 <div className="space-y-2">
                   <h4 className="text-lg font-black text-gray-900">Catatan Khusus (Opsional)</h4>
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Contoh: Saus sedikit saja, jangan pakai bawang bombay..."
-                    className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 text-base focus:outline-none focus:ring-2 focus:ring-[#E53935] resize-none h-24"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 text-base focus:outline-none focus:ring-2 focus:ring-[#b80000] resize-none h-24"
                   />
                 </div>
               </div>
 
               {/* Bottom Action Bar */}
-              <div className="p-6 md:p-8 bg-gray-50/90 backdrop-blur border-t border-gray-100 flex items-center justify-between shrink-0 gap-4">
+              <div className="p-6 md:p-8 bg-amber-50/80 backdrop-blur border-t-2 border-amber-200 flex items-center justify-between shrink-0 gap-4">
                 {/* Quantity Counter */}
                 <div className="flex items-center gap-4 bg-white rounded-full p-2 border border-gray-200 shadow-sm shrink-0">
                   <button
                     onClick={() => setQty(Math.max(1, qty - 1))}
                     className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-700 hover:bg-gray-200 active:scale-90 transition-all font-bold text-xl"
                   >
-                    <Minus size={20} />
+                    -
                   </button>
-                  <span className="text-2xl font-black w-8 text-center text-gray-900">{qty}</span>
+                  <span className="font-black text-2xl w-8 text-center text-gray-900">{qty}</span>
                   <button
                     onClick={() => setQty(qty + 1)}
-                    className="w-12 h-12 rounded-full bg-[#E53935] text-white flex items-center justify-center hover:bg-[#C62828] active:scale-90 transition-all font-bold text-xl shadow-md"
+                    className="w-12 h-12 rounded-full bg-[#b80000] text-white flex items-center justify-center hover:bg-[#940000] active:scale-90 transition-all font-bold text-xl"
                   >
-                    <Plus size={20} />
+                    +
                   </button>
                 </div>
 
-                {/* Add to Cart CTA */}
+                {/* Add to Cart Button */}
                 <button
                   onClick={handleAddToCart}
-                  className="flex-1 bg-[#E53935] hover:bg-[#C62828] text-white py-5 px-6 rounded-2xl text-xl md:text-2xl font-black shadow-xl shadow-red-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-between"
+                  className="flex-1 bg-[#b80000] hover:bg-[#940000] text-[#ffde59] py-5 px-6 rounded-2xl font-black text-lg md:text-xl shadow-xl shadow-red-900/20 transition-all flex items-center justify-between active:scale-[0.98] border-2 border-[#ffde59]"
                 >
-                  <span>Tambah Pesanan</span>
-                  <span className="bg-white/20 px-3.5 py-1 rounded-xl text-lg font-bold">
+                  <span className="flex items-center gap-2">
+                    <ShoppingBag size={22} />
+                    <span>Tambahkan Pesanan</span>
+                  </span>
+                  <span className="font-black text-white bg-black/30 px-3 py-1 rounded-xl">
                     {formatPrice(currentUnitPrice * qty)}
                   </span>
                 </button>

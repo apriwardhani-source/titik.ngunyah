@@ -2,20 +2,19 @@
 
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Sparkles, ChevronRight, Utensils } from "lucide-react";
-import Image from "next/image";
+import { ChevronRight, Utensils } from "lucide-react";
 
 export default function SplashPage() {
   const router = useRouter();
 
   return (
     <div
-      className="relative w-full h-[100dvh] overflow-hidden cursor-pointer bg-gradient-to-br from-[#991B1B] via-[#B91C1C] to-[#7F1D1D] select-none flex flex-col justify-between p-6 sm:p-12 text-white"
+      className="relative w-full h-[100dvh] overflow-hidden cursor-pointer bg-gradient-to-br from-[#b80000] via-[#940000] to-[#730000] select-none flex flex-col justify-between p-6 sm:p-12 text-white"
       onClick={() => router.push("/menu")}
     >
       {/* Background Decorative Circles / Glowing Orbs */}
-      <div className="absolute -top-32 -left-32 w-96 h-96 bg-[#FBC02D]/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-[#F59E0B]/25 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -top-32 -left-32 w-96 h-96 bg-[#ffde59]/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-[#ffde59]/20 rounded-full blur-3xl pointer-events-none" />
 
       {/* Top Header Badge */}
       <motion.div
@@ -25,12 +24,12 @@ export default function SplashPage() {
         className="flex items-center justify-between z-10"
       >
         <div className="bg-black/30 backdrop-blur-md px-5 py-2.5 rounded-full border border-white/15 flex items-center gap-2 text-xs sm:text-sm font-bold tracking-wide">
-          <span className="w-2.5 h-2.5 bg-[#FBC02D] rounded-full animate-ping" />
+          <span className="w-2.5 h-2.5 bg-[#ffde59] rounded-full animate-ping" />
           <span>Bazar Technopreneurship 2026</span>
           <span className="opacity-60 hidden sm:inline">• Politala</span>
         </div>
 
-        <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-full text-xs font-bold text-[#FEF08A]">
+        <div className="bg-[#ffde59] text-[#b80000] px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider shadow-md">
           Kiosk Mandiri
         </div>
       </motion.div>
@@ -44,7 +43,7 @@ export default function SplashPage() {
           transition={{ duration: 0.7, ease: "easeOut" }}
           className="relative mb-6"
         >
-          <div className="w-32 h-32 sm:w-40 sm:h-40 bg-white rounded-3xl shadow-2xl p-4 flex items-center justify-center border-4 border-[#FBC02D] ring-8 ring-white/10">
+          <div className="w-36 h-36 sm:w-44 sm:h-44 bg-white rounded-3xl shadow-2xl p-4 flex items-center justify-center border-4 border-[#ffde59] ring-8 ring-white/15">
             <img
               src="/logo.png"
               alt="Logo Titik Ngunyah"
@@ -60,18 +59,18 @@ export default function SplashPage() {
           transition={{ duration: 0.7, delay: 0.2 }}
           className="space-y-3 max-w-2xl"
         >
-          <h1 className="text-5xl sm:text-7xl font-black tracking-tight drop-shadow-lg font-sans">
-            TITIK<span className="text-[#FBC02D]">NGUNYAH</span>
+          <h1 className="text-5xl sm:text-7xl font-black tracking-tight drop-shadow-lg font-sans text-white">
+            TITIK<span className="text-[#ffde59]">NGUNYAH</span>
           </h1>
 
           {/* Banner Tagline Pill */}
-          <div className="inline-block bg-[#FBC02D] text-[#991B1B] px-6 py-2 rounded-full shadow-lg transform -rotate-1">
+          <div className="inline-block bg-[#ffde59] text-[#b80000] px-7 py-2.5 rounded-full shadow-2xl transform -rotate-1 border-2 border-white/60">
             <p className="text-xl sm:text-3xl font-black tracking-wider uppercase drop-shadow-sm font-sans">
               ENAKNYA BIKIN PENASARAN!
             </p>
           </div>
 
-          <p className="text-base sm:text-xl font-semibold text-[#FEF08A] opacity-90 drop-shadow mt-2">
+          <p className="text-base sm:text-xl font-semibold text-[#ffde59] opacity-95 drop-shadow mt-2">
             Kebab Daging & Sosis Panggang • Minuman Dingin Segar
           </p>
         </motion.div>
@@ -88,9 +87,9 @@ export default function SplashPage() {
               e.stopPropagation();
               router.push("/menu");
             }}
-            className="group relative bg-[#FBC02D] hover:bg-[#F59E0B] text-[#991B1B] px-10 sm:px-14 py-5 sm:py-6 rounded-3xl text-2xl sm:text-3xl font-black shadow-2xl transition-all duration-300 transform hover:scale-105 active:scale-95 flex items-center gap-3 border-2 border-white/50"
+            className="group relative bg-[#ffde59] hover:bg-[#facc15] text-[#b80000] px-10 sm:px-14 py-5 sm:py-6 rounded-3xl text-2xl sm:text-3xl font-black shadow-2xl transition-all duration-300 transform hover:scale-105 active:scale-95 flex items-center gap-3 border-2 border-white"
           >
-            <Utensils size={32} className="text-[#991B1B]" />
+            <Utensils size={32} className="text-[#b80000]" />
             <span>Mulai Pesan</span>
             <ChevronRight size={32} className="transition-transform group-hover:translate-x-1" />
           </button>
@@ -104,7 +103,7 @@ export default function SplashPage() {
         transition={{ duration: 1, delay: 0.8, repeat: Infinity, repeatType: "reverse" }}
         className="relative z-10 text-center"
       >
-        <p className="text-sm sm:text-base font-bold tracking-[0.25em] text-[#FEF08A]/90 uppercase drop-shadow">
+        <p className="text-sm sm:text-base font-black tracking-[0.25em] text-[#ffde59] uppercase drop-shadow">
           👉 Sentuh Layar Mana Saja Untuk Memulai 👈
         </p>
       </motion.div>

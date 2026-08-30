@@ -14,15 +14,15 @@ export default function CartPage() {
 
   if (items.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-[100dvh] bg-background p-6 text-center">
-        <div className="w-28 h-28 bg-red-50 text-[#E53935] rounded-full flex items-center justify-center mb-6 shadow-inner">
+      <div className="flex flex-col items-center justify-center h-[100dvh] bg-[#FFFDF0] p-6 text-center">
+        <div className="w-28 h-28 bg-red-50 text-[#b80000] rounded-full flex items-center justify-center mb-6 shadow-inner border-2 border-[#ffde59]">
           <ShoppingBag size={56} />
         </div>
-        <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">Keranjang Kamu Kosong</h2>
-        <p className="text-gray-500 text-lg mb-8 max-w-sm">Yuk pilih kebab dan cemilan favoritmu sekarang!</p>
+        <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-2">Keranjang Kamu Kosong</h2>
+        <p className="text-gray-500 text-base md:text-lg mb-8 max-w-sm">Yuk pilih kebab dan minuman favoritmu sekarang!</p>
         <button
           onClick={() => router.push("/menu")}
-          className="bg-[#E53935] hover:bg-[#C62828] text-white px-8 py-4 rounded-full text-xl font-bold transition-all shadow-lg hover:scale-105 active:scale-95"
+          className="bg-[#b80000] hover:bg-[#940000] text-[#ffde59] px-8 py-4 rounded-2xl text-xl font-black transition-all shadow-xl hover:scale-105 active:scale-95 border-2 border-[#ffde59]"
         >
           Kembali ke Menu
         </button>
@@ -31,7 +31,7 @@ export default function CartPage() {
   }
 
   return (
-    <div className="flex flex-col md:flex-row h-[100dvh] max-h-[100dvh] bg-background overflow-hidden select-none">
+    <div className="flex flex-col md:flex-row h-[100dvh] max-h-[100dvh] bg-[#FFFDF0] overflow-hidden select-none">
       {/* Left: Cart Items List */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden p-6 md:p-8 lg:p-10">
         {/* Top Header */}
@@ -44,17 +44,17 @@ export default function CartPage() {
               <ArrowLeft size={24} />
             </button>
             <div>
-              <h1 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight">Pesanan Saya</h1>
-              <p className="text-gray-500 text-sm md:text-base">Periksa kembali item & varian pilihanmu</p>
+              <h1 className="text-3xl md:text-4xl font-black text-[#b80000] tracking-tight">Pesanan Saya</h1>
+              <p className="text-gray-500 text-sm md:text-base font-medium">Periksa kembali item & varian pilihanmu</p>
             </div>
           </div>
 
-          <div className="hidden sm:flex items-center gap-3 bg-white px-4 py-2 rounded-2xl border border-amber-200 shadow-sm">
-            <div className="w-9 h-9 p-0.5 rounded-xl border border-[#FBC02D] bg-white flex items-center justify-center">
+          <div className="hidden sm:flex items-center gap-3 bg-white px-4 py-2 rounded-2xl border-2 border-[#ffde59] shadow-sm">
+            <div className="w-10 h-10 p-0.5 rounded-xl border border-[#ffde59] bg-white flex items-center justify-center">
               <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
             </div>
             <span className="font-black text-sm text-gray-900">
-              TITIK<span className="text-[#E53935]">NGUNYAH</span>
+              TITIK<span className="text-[#b80000]">NGUNYAH</span>
             </span>
           </div>
         </div>
@@ -70,17 +70,17 @@ export default function CartPage() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, x: -50 }}
                 transition={{ duration: 0.2 }}
-                className="bg-white rounded-3xl p-5 md:p-6 shadow-sm border border-gray-100 flex gap-4 md:gap-6 items-center"
+                className="bg-white rounded-3xl p-5 md:p-6 shadow-sm border-2 border-[#ffde59]/50 flex gap-4 md:gap-6 items-center"
               >
                 <img
                   src={item.image}
                   alt={item.name}
-                  className="w-20 h-20 md:w-24 md:h-24 rounded-2xl object-cover shrink-0 bg-gray-100 border border-gray-100 self-start mt-1"
+                  className="w-20 h-20 md:w-24 md:h-24 rounded-2xl object-cover shrink-0 bg-amber-50 border border-amber-100 self-start mt-1"
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline justify-between gap-2">
-                    <h3 className="text-lg md:text-xl font-bold text-gray-900 truncate">{item.name}</h3>
-                    <p className="text-base md:text-lg font-black text-[#E53935] shrink-0">
+                    <h3 className="text-lg md:text-xl font-black text-gray-900 truncate">{item.name}</h3>
+                    <p className="text-base md:text-lg font-black text-[#b80000] shrink-0">
                       {formatPrice(item.price * item.quantity)}
                     </p>
                   </div>
@@ -99,12 +99,12 @@ export default function CartPage() {
                         </span>
                       )}
                       {item.options.spicy && (
-                        <span className="inline-flex items-center gap-1 text-xs font-bold bg-red-50 text-red-700 px-2.5 py-1 rounded-lg border border-red-100">
+                        <span className="inline-flex items-center gap-1 text-xs font-bold bg-red-50 text-[#b80000] px-2.5 py-1 rounded-lg border border-red-100">
                           <Flame size={12} /> {item.options.spicy}
                         </span>
                       )}
                       {item.options.mayo && (
-                        <span className="inline-flex items-center gap-1 text-xs font-bold bg-amber-50 text-amber-700 px-2.5 py-1 rounded-lg border border-amber-100">
+                        <span className="inline-flex items-center gap-1 text-xs font-bold bg-amber-50 text-amber-800 px-2.5 py-1 rounded-lg border border-amber-200">
                           {item.options.mayo}
                         </span>
                       )}
@@ -124,17 +124,17 @@ export default function CartPage() {
                 </div>
 
                 {/* Qty Controls */}
-                <div className="flex items-center gap-2 md:gap-3 bg-gray-50 rounded-full p-1.5 border border-gray-200 shrink-0">
+                <div className="flex items-center gap-2 bg-gray-50 rounded-2xl p-1.5 border border-gray-200 shrink-0">
                   <button
                     onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                    className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-700 hover:bg-gray-100 active:scale-90 transition-all"
+                    className="w-8 h-8 rounded-xl bg-white shadow-sm flex items-center justify-center text-gray-700 hover:bg-gray-100 active:scale-90 transition-all font-bold"
                   >
                     <Minus size={16} />
                   </button>
-                  <span className="text-base md:text-lg font-bold w-6 text-center text-gray-900">{item.quantity}</span>
+                  <span className="font-black text-base w-6 text-center text-gray-900">{item.quantity}</span>
                   <button
                     onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                    className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-[#E53935] shadow-sm flex items-center justify-center text-white hover:bg-[#C62828] active:scale-90 transition-all"
+                    className="w-8 h-8 rounded-xl bg-[#b80000] text-white shadow-sm flex items-center justify-center hover:bg-[#940000] active:scale-90 transition-all font-bold"
                   >
                     <Plus size={16} />
                   </button>
@@ -143,7 +143,7 @@ export default function CartPage() {
                 {/* Remove Button */}
                 <button
                   onClick={() => removeItem(item.id)}
-                  className="w-10 h-10 md:w-12 md:h-12 shrink-0 rounded-2xl bg-red-50 flex items-center justify-center text-red-500 hover:bg-red-100 hover:scale-105 active:scale-95 transition-all"
+                  className="w-10 h-10 md:w-12 md:h-12 shrink-0 rounded-2xl bg-red-50 flex items-center justify-center text-[#b80000] hover:bg-red-100 hover:scale-105 active:scale-95 transition-all border border-red-100"
                 >
                   <Trash2 size={20} />
                 </button>
@@ -154,28 +154,28 @@ export default function CartPage() {
       </div>
 
       {/* Right / Bottom: Order Summary */}
-      <div className="w-full md:w-[360px] lg:w-[400px] bg-white shadow-2xl z-10 flex flex-col justify-between shrink-0 border-t md:border-t-0 md:border-l border-gray-100 max-h-[35vh] md:max-h-full">
-        <div className="p-5 md:p-8 border-b border-gray-100 shrink-0">
+      <div className="w-full md:w-[360px] lg:w-[400px] bg-white shadow-2xl z-10 flex flex-col justify-between shrink-0 border-t md:border-t-0 md:border-l-4 border-[#ffde59] max-h-[35vh] md:max-h-full">
+        <div className="p-5 md:p-8 border-b border-gray-100 shrink-0 bg-gradient-to-r from-red-50/40 to-white">
           <h2 className="text-xl md:text-2xl font-black text-gray-900">Ringkasan Pembayaran</h2>
         </div>
 
         <div className="p-5 md:p-8 flex-1 flex flex-col justify-center gap-3 md:gap-4 overflow-y-auto">
-          <div className="flex justify-between items-center text-gray-500 text-base md:text-lg">
+          <div className="flex justify-between items-center text-gray-500 text-base md:text-lg font-medium">
             <span>Total Item</span>
-            <span className="font-bold text-gray-900">{items.reduce((acc, i) => acc + i.quantity, 0)} Porsi</span>
+            <span className="font-black text-gray-900">{items.reduce((acc, i) => acc + i.quantity, 0)} Porsi</span>
           </div>
           <div className="h-px bg-gray-100 my-1" />
           <div className="flex justify-between items-baseline">
             <span className="text-lg md:text-xl font-bold text-gray-900">Total Tagihan</span>
-            <span className="text-3xl md:text-4xl font-black text-[#E53935]">{formatPrice(total)}</span>
+            <span className="text-3xl md:text-4xl font-black text-[#b80000]">{formatPrice(total)}</span>
           </div>
         </div>
 
         {/* Proceed Button */}
-        <div className="p-4 md:p-6 lg:p-8 bg-gray-50/80 border-t border-gray-100 shrink-0">
+        <div className="p-4 md:p-6 lg:p-8 bg-amber-50/50 border-t border-amber-100 shrink-0">
           <button
             onClick={() => router.push("/payment")}
-            className="w-full bg-[#E53935] hover:bg-[#C62828] text-white py-4 md:py-5 rounded-2xl text-xl md:text-2xl font-bold shadow-xl shadow-red-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+            className="w-full bg-[#b80000] hover:bg-[#940000] text-[#ffde59] py-4 md:py-5 rounded-2xl text-xl md:text-2xl font-black shadow-xl shadow-red-900/20 transition-all hover:scale-[1.02] active:scale-[0.98] border-2 border-[#ffde59]"
           >
             Lanjut ke Pembayaran →
           </button>
