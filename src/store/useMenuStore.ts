@@ -35,12 +35,12 @@ export const useMenuStore = create<MenuState>()(
     (set, get) => ({
       categories: [
         { id: "c1", name: "Rekomendasi" },
-        { id: "c2", name: "Kebab Series" },
-        { id: "c3", name: "Kentang Series" },
+        { id: "c2", name: "Menu Paket" },
+        { id: "c3", name: "Kebab" },
         { id: "c4", name: "Minuman" },
-        { id: "c5", name: "Paket Berdua" },
-        { id: "c6", name: "Paket Komplit" }
+        { id: "c5", name: "Game" },
       ],
+
       products: [],
       addCategory: (category) => set((state) => ({ categories: [...state.categories, category] })),
       updateCategory: (id, category) => set((state) => ({ categories: state.categories.map(c => c.id === id ? { ...c, ...category } : c) })),
