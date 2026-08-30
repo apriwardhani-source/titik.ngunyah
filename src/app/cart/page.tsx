@@ -35,16 +35,27 @@ export default function CartPage() {
       {/* Left: Cart Items List */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden p-6 md:p-8 lg:p-10">
         {/* Top Header */}
-        <div className="flex items-center gap-4 md:gap-6 mb-6 shrink-0">
-          <button
-            onClick={() => router.push("/menu")}
-            className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-white shadow-sm border border-gray-200 flex items-center justify-center text-gray-700 hover:bg-gray-100 hover:scale-105 active:scale-95 transition-all shrink-0"
-          >
-            <ArrowLeft size={24} />
-          </button>
-          <div>
-            <h1 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight">Pesanan Saya</h1>
-            <p className="text-gray-500 text-sm md:text-base">Periksa kembali item & varian pilihanmu</p>
+        <div className="flex items-center justify-between mb-6 shrink-0">
+          <div className="flex items-center gap-4 md:gap-5">
+            <button
+              onClick={() => router.push("/menu")}
+              className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-white shadow-sm border border-gray-200 flex items-center justify-center text-gray-700 hover:bg-gray-100 hover:scale-105 active:scale-95 transition-all shrink-0"
+            >
+              <ArrowLeft size={24} />
+            </button>
+            <div>
+              <h1 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight">Pesanan Saya</h1>
+              <p className="text-gray-500 text-sm md:text-base">Periksa kembali item & varian pilihanmu</p>
+            </div>
+          </div>
+
+          <div className="hidden sm:flex items-center gap-3 bg-white px-4 py-2 rounded-2xl border border-amber-200 shadow-sm">
+            <div className="w-9 h-9 p-0.5 rounded-xl border border-[#FBC02D] bg-white flex items-center justify-center">
+              <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+            </div>
+            <span className="font-black text-sm text-gray-900">
+              TITIK<span className="text-[#E53935]">NGUNYAH</span>
+            </span>
           </div>
         </div>
 

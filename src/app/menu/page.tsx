@@ -216,14 +216,21 @@ export default function MenuPage() {
   };
 
   return (
-    <div className="flex h-[100dvh] max-h-[100dvh] bg-background overflow-hidden select-none">
+    <div className="flex h-[100dvh] max-h-[100dvh] bg-[#FFFBEB]/30 overflow-hidden select-none">
       {/* Sidebar Categories */}
-      <div className="w-1/4 max-w-sm bg-white shadow-xl flex flex-col z-10 shrink-0 border-r border-gray-100">
-        <div className="p-6 md:p-8 pb-4 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="text-2xl md:text-3xl font-black text-[#E53935] tracking-tight">MENU</h2>
-          <span className="text-xs font-bold uppercase tracking-wider bg-red-50 text-[#E53935] px-2.5 py-1 rounded-full">
-            Kiosk
-          </span>
+      <div className="w-1/4 max-w-sm bg-white shadow-xl flex flex-col z-10 shrink-0 border-r border-amber-100">
+        <div className="p-5 md:p-6 pb-4 border-b border-gray-100 flex items-center gap-3 bg-gradient-to-r from-red-50/50 to-white">
+          <div className="w-12 h-12 bg-white rounded-2xl border-2 border-[#FBC02D] p-1.5 shadow-sm shrink-0 flex items-center justify-center">
+            <img src="/logo.png" alt="Logo Titik Ngunyah" className="w-full h-full object-contain" />
+          </div>
+          <div>
+            <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none">
+              TITIK<span className="text-[#E53935]">NGUNYAH</span>
+            </h1>
+            <span className="text-[10px] font-black uppercase tracking-widest text-[#E53935] bg-red-50 px-2 py-0.5 rounded-full inline-block mt-1">
+              Kiosk Menu
+            </span>
+          </div>
         </div>
         <div className="flex-1 overflow-y-auto touch-scroll hide-scrollbar py-4 px-4 md:px-6 space-y-3 md:space-y-4">
           {categoryList.map((catName) => (
@@ -232,12 +239,12 @@ export default function MenuPage() {
               onClick={() => setActiveCategory(catName)}
               className={`w-full text-left px-5 py-4 md:px-6 md:py-5 rounded-2xl text-lg md:text-xl font-bold transition-all duration-300 flex items-center justify-between ${
                 activeCategory === catName
-                  ? "bg-[#E53935] text-white shadow-lg shadow-red-500/30 scale-[1.02]"
-                  : "bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  ? "bg-[#E53935] text-white shadow-lg shadow-red-500/30 scale-[1.02] ring-2 ring-[#FBC02D]"
+                  : "bg-gray-50 text-gray-700 hover:bg-red-50/60 hover:text-[#E53935]"
               }`}
             >
               <span>{catName}</span>
-              {activeCategory === catName && <span className="text-xl">➔</span>}
+              {activeCategory === catName && <span className="text-xl text-[#FEF08A]">➔</span>}
             </button>
           ))}
         </div>

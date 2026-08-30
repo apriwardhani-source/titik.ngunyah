@@ -27,10 +27,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="flex h-screen bg-gray-50 text-gray-900 font-sans">
         {/* Sidebar */}
         <div className="w-72 bg-white border-r border-gray-200 flex flex-col">
-          <div className="h-20 flex items-center px-8 border-b border-gray-100">
-            <h1 className="text-2xl font-black tracking-tight text-gray-900">
-              TITIK<span className="text-[#E53935]">NGUNYAH</span>
-            </h1>
+          <div className="h-20 flex items-center gap-3 px-6 border-b border-gray-100 bg-gradient-to-r from-red-50/40 to-white">
+            <div className="w-10 h-10 p-1 bg-white rounded-xl border-2 border-[#FBC02D] shadow-sm flex items-center justify-center shrink-0">
+              <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+            </div>
+            <div>
+              <h1 className="text-lg font-black tracking-tight text-gray-900 leading-none">
+                TITIK<span className="text-[#E53935]">NGUNYAH</span>
+              </h1>
+              <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mt-0.5">
+                Admin Panel
+              </span>
+            </div>
           </div>
           <nav className="flex-1 px-4 py-8 space-y-2 overflow-y-auto">
             {navigation.map((item) => {

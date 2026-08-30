@@ -62,14 +62,14 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-6">
         <div className="bg-white rounded-3xl shadow-2xl p-10 w-full max-w-sm text-center animate-in fade-in zoom-in-95 duration-200">
           {/* Logo */}
-          <div className="w-20 h-20 bg-red-50 text-[#E53935] rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner border border-red-100">
-            <Lock size={38} />
+          <div className="w-20 h-20 bg-white rounded-3xl p-2 flex items-center justify-center mx-auto mb-4 shadow-md border-2 border-[#FBC02D]">
+            <img src="/logo.png" alt="Logo Titik Ngunyah" className="w-full h-full object-contain" />
           </div>
 
           <h1 className="text-2xl font-black text-gray-900 tracking-tight mb-1">
             TITIK<span className="text-[#E53935]">NGUNYAH</span>
           </h1>
-          <p className="text-gray-500 text-sm mb-8 font-medium">Masukkan PIN Admin untuk melanjutkan</p>
+          <p className="text-gray-500 text-sm mb-6 font-medium">Masukkan PIN Admin untuk melanjutkan</p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="relative">
