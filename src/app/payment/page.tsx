@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useCartStore } from "@/store/useCartStore";
+import { useCameraStore } from "@/store/useCameraStore";
 import { useRouter } from "next/navigation";
 import { formatPrice } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -38,40 +39,28 @@ export default function PaymentPage() {
   } | null>(null);
   const [countdown, setCountdown] = useState<number>(15);
 
-  // Initialize front camera quietly in background
+  // Reuse global camera stream (already initialized on splash page, no new permission prompt)
+  const cameraStream = useCameraStore((s) => s.stream);
+  const initCamera = useCameraStore((s) => s.initCamera);
+
   useEffect(() => {
-    let stream: MediaStream | null = null;
+    const setupVideo = async () => {
+      // If stream isn't ready yet (e.g. user navigated directly), try to init
+      if (!cameraStream || !cameraStream.active) {
+        await initCamera();
+      }
 
-    const initCamera = async () => {
-      try {
-        if (typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia) {
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-              facingMode: "user",
-              width: { ideal: 640 },
-              height: { ideal: 480 },
-            },
-            audio: false,
-          });
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream;
-            videoRef.current.play().catch(() => {});
-          }
-        }
-      } catch (err) {
-        // Silently catch if camera permission not granted or device has no camera
-        console.log("Standby camera initialization:", err);
+      const stream = useCameraStore.getState().stream;
+      if (stream && videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play().catch(() => {});
       }
     };
 
-    initCamera();
+    setupVideo();
 
-    return () => {
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
-      }
-    };
-  }, []);
+    // Do NOT stop the stream on unmount - keep it alive for the session
+  }, [cameraStream, initCamera]);
 
   // Countdown timer when success popup is open
   useEffect(() => {

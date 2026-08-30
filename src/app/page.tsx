@@ -3,14 +3,22 @@
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ChevronRight, Utensils } from "lucide-react";
+import { useCameraStore } from "@/store/useCameraStore";
 
 export default function SplashPage() {
   const router = useRouter();
+  const initCamera = useCameraStore((s) => s.initCamera);
+
+  const handleStart = async () => {
+    // Request camera permission once here (user-triggered action = Safari grants persistent session permission)
+    await initCamera();
+    router.push("/menu");
+  };
 
   return (
     <div
       className="relative w-full h-[100dvh] overflow-hidden cursor-pointer bg-gradient-to-br from-[#b80000] via-[#940000] to-[#730000] select-none flex flex-col justify-between p-6 sm:p-12 text-white"
-      onClick={() => router.push("/menu")}
+      onClick={handleStart}
     >
       {/* Background Decorative Circles / Glowing Orbs */}
       <div className="absolute -top-32 -left-32 w-96 h-96 bg-[#ffde59]/20 rounded-full blur-3xl pointer-events-none" />
@@ -85,7 +93,7 @@ export default function SplashPage() {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              router.push("/menu");
+              handleStart();
             }}
             className="group relative bg-[#ffde59] hover:bg-[#facc15] text-[#b80000] px-10 sm:px-14 py-5 sm:py-6 rounded-3xl text-2xl sm:text-3xl font-black shadow-2xl transition-all duration-300 transform hover:scale-105 active:scale-95 flex items-center gap-3 border-2 border-white"
           >
