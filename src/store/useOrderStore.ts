@@ -30,6 +30,7 @@ interface OrderState {
   addOrder: (order: Order) => void;
   syncOrders: (orders: Order[]) => void;
   updateOrderStatus: (id: string, status: string) => Promise<void>;
+  deleteOrder: (id: string) => Promise<void>;
   fetchOrders: () => Promise<void>;
 }
 
@@ -66,6 +67,25 @@ export const useOrderStore = create<OrderState>()(
           }
         } catch (error) {
           console.error('Failed to update status', error);
+        }
+      },
+      deleteOrder: async (id) => {
+        const order = get().orders.find((o) => o.id === id);
+        // Optimistic delete
+        set((state) => ({
+          orders: state.orders.filter((o) => o.id !== id),
+        }));
+
+        try {
+          if (order && order.db_id) {
+            await fetch(`${getApiUrl()}/orders/${order.db_id}`, {
+              method: 'DELETE',
+            });
+            get().fetchOrders();
+          }
+        } catch (error) {
+          console.error('Failed to delete order', error);
+          get().fetchOrders();
         }
       },
       fetchOrders: async () => {
