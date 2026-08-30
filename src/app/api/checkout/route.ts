@@ -24,11 +24,27 @@ export async function POST(request: Request) {
       const randomStr = Math.random().toString(36).substring(2, 6).toUpperCase();
       const orderNumber = `ORD-${dateStr}-${randomStr}`;
 
-      // Count today's orders for queue number (e.g., A-001, A-002)
-      const [countResult]: any = await connection.query(
-        'SELECT COUNT(*) as count FROM orders WHERE DATE(created_at) = CURDATE()'
+      // Fetch the highest/latest queue number today with transaction lock (FOR UPDATE) to prevent duplicates & race conditions
+      const [lastOrderRows]: any = await connection.query(
+        `SELECT queue_number FROM orders 
+         WHERE DATE(created_at) = CURDATE() 
+            OR DATE(CONVERT_TZ(created_at, '+00:00', '+07:00')) = DATE(CONVERT_TZ(NOW(), '+00:00', '+07:00'))
+         ORDER BY id DESC LIMIT 1 FOR UPDATE`
       );
-      const queueIndex = (countResult[0]?.count || 0) + 1;
+
+      let queueIndex = 1;
+      if (lastOrderRows && lastOrderRows.length > 0 && lastOrderRows[0].queue_number) {
+        const match = String(lastOrderRows[0].queue_number).match(/A-(\d+)/);
+        if (match) {
+          queueIndex = parseInt(match[1], 10) + 1;
+        } else {
+          // If queue number is not in A-XXX format, count today's records as fallback
+          const [countResult]: any = await connection.query(
+            'SELECT COUNT(*) as count FROM orders WHERE DATE(created_at) = CURDATE()'
+          );
+          queueIndex = (countResult[0]?.count || 0) + 1;
+        }
+      }
       const queueNumber = `A-${String(queueIndex).padStart(3, '0')}`;
 
       // 2. Fetch prices from database to calculate exact total
