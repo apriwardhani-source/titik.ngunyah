@@ -26,6 +26,8 @@ import {
   ArrowRight,
   Camera,
   X,
+  Gift,
+  Sparkles,
 } from "lucide-react";
 
 export default function OrdersPage() {
@@ -395,6 +397,23 @@ export default function OrdersPage() {
                       ) : (
                         <p className="text-sm text-gray-700 font-medium">{order.items}</p>
                       )}
+
+                      {/* 🎁 HADIAH LUCKY SPIN BADGE */}
+                      {order.spin_reward && (
+                        <div className="p-3 bg-gradient-to-r from-amber-100 via-yellow-100 to-amber-100 border-2 border-amber-300 rounded-2xl flex items-center gap-2.5 shadow-sm">
+                          <div className="w-9 h-9 rounded-xl bg-[#b80000] text-[#ffde59] flex items-center justify-center text-lg shrink-0 shadow-sm">
+                            🎁
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-black text-[#b80000] uppercase tracking-wider block">
+                              BONUS LUCKY SPIN (+1K)
+                            </span>
+                            <span className="text-xs sm:text-sm font-black text-gray-900 leading-tight block">
+                              {order.spin_reward}
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Quick Status Action Buttons */}
@@ -535,6 +554,12 @@ export default function OrdersPage() {
                             ))
                           ) : (
                             <span className="text-xs text-gray-600">{order.items}</span>
+                          )}
+
+                          {order.spin_reward && (
+                            <div className="inline-flex items-center gap-1 bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-md text-[11px] font-black mt-1">
+                              🎁 Hadiah Spin: {order.spin_reward}
+                            </div>
                           )}
                         </div>
                       </td>
@@ -683,6 +708,23 @@ export default function OrdersPage() {
                     <p className="text-sm font-medium text-gray-700">{selectedOrder.items}</p>
                   )}
                 </div>
+
+                {selectedOrder.spin_reward && (
+                  <div className="mt-4 p-3.5 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-2xl border-2 border-[#ffde59] flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#b80000] text-[#ffde59] flex items-center justify-center text-xl shrink-0">
+                      🎁
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-black text-[#b80000] uppercase tracking-wider block">
+                        Hadiah Lucky Spin (+Rp 1.000)
+                      </span>
+                      <span className="text-sm font-black text-gray-900 leading-tight block">
+                        {selectedOrder.spin_reward}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex justify-between font-black text-lg text-gray-900 mt-4 pt-3 border-t border-gray-100">
                   <span>Total Pembayaran:</span>
                   <span className="text-[#b80000]">{selectedOrder.formattedTotal}</span>

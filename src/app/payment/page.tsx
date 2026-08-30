@@ -6,6 +6,7 @@ import { useCameraStore } from "@/store/useCameraStore";
 import { useRouter } from "next/navigation";
 import { formatPrice } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import SpinWheelModal from "@/components/SpinWheelModal";
 import { 
   ArrowLeft, 
   QrCode, 
@@ -14,12 +15,14 @@ import {
   AlertCircle, 
   ShieldCheck,
   Clock,
-  Utensils
+  Utensils,
+  Sparkles,
+  Gift
 } from "lucide-react";
 
 export default function PaymentPage() {
   const router = useRouter();
-  const { items, getTotalPrice, clearCart } = useCartStore();
+  const { items, hasSpin, getTotalPrice, clearCart } = useCartStore();
   const total = getTotalPrice();
 
   const [method, setMethod] = useState<"qris" | "cash">("qris");
@@ -30,12 +33,25 @@ export default function PaymentPage() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // Success Order Popup State
-  const [successOrder, setSuccessOrder] = useState<{
+  // Lucky Spin Modal State
+  const [isSpinOpen, setIsSpinOpen] = useState(false);
+  const [pendingOrderInfo, setPendingOrderInfo] = useState<{
+    id: number;
     order_number: string;
     queue_number: string;
     total: number;
     payment_method: string;
+    spin_reward?: string | null;
+  } | null>(null);
+
+  // Success Order Popup State
+  const [successOrder, setSuccessOrder] = useState<{
+    id?: number;
+    order_number: string;
+    queue_number: string;
+    total: number;
+    payment_method: string;
+    spin_reward?: string | null;
   } | null>(null);
   const [countdown, setCountdown] = useState<number>(15);
 
@@ -58,8 +74,7 @@ export default function PaymentPage() {
     };
 
     setupVideo();
-
-    // Do NOT stop the stream on unmount - keep it alive for the session
+    // Do NOT stop the stream on unmount - keep it alive for the kiosk session
   }, [cameraStream, initCamera]);
 
   // Countdown timer when success popup is open
@@ -80,8 +95,8 @@ export default function PaymentPage() {
     return () => clearInterval(timer);
   }, [successOrder, router]);
 
-  // If cart is empty and not in success popup, redirect to menu
-  if (items.length === 0 && !successOrder) {
+  // If cart is empty and not in success/spin popup, redirect to menu
+  if (items.length === 0 && !successOrder && !isSpinOpen) {
     if (typeof window !== "undefined") {
       router.replace("/menu");
     }
@@ -133,6 +148,7 @@ export default function PaymentPage() {
         customer_name: "Pelanggan Kiosk",
         customer_photo: photoData,
         payment_method: selectedMethod,
+        has_spin: hasSpin,
       };
 
       const res = await fetch("/api/checkout", {
@@ -147,25 +163,57 @@ export default function PaymentPage() {
         throw new Error(data.message || "Gagal memproses pesanan");
       }
 
-      const orderData = data.data || {
-        order_number: data.order_number || "ORD-001",
-        queue_number: data.queue_number || "A-001",
+      const orderData = {
+        id: data.data?.id,
+        order_number: data.data?.order_number || data.order_number || "ORD-001",
+        queue_number: data.data?.queue_number || data.queue_number || "A-001",
         total: total,
         payment_method: selectedMethod,
       };
 
+      const hadSpin = hasSpin;
+
       // Clear local cart
       clearCart();
-
-      // Show Popup Modal Immediately!
-      setSuccessOrder(orderData);
-      setCountdown(15);
       setIsProcessing(false);
+
+      if (hadSpin && orderData.id) {
+        // Show Lucky Spin Wheel first!
+        setPendingOrderInfo(orderData);
+        setIsSpinOpen(true);
+      } else {
+        // Show Queue Number directly!
+        setSuccessOrder(orderData);
+        setCountdown(15);
+      }
     } catch (err: any) {
       console.error("Checkout error:", err);
       setErrorMsg(err.message || "Terjadi kesalahan saat memproses pesanan. Silakan coba lagi.");
       setIsProcessing(false);
     }
+  };
+
+  // Called when user finishes spinning the wheel
+  const handleSpinFinish = async (rewardBadgeText: string) => {
+    if (!pendingOrderInfo) return;
+
+    try {
+      // Record spin reward in database
+      await fetch(`/api/orders/${pendingOrderInfo.id}/spin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ spin_reward: rewardBadgeText }),
+      });
+    } catch (e) {
+      console.error("Failed to persist spin reward:", e);
+    }
+
+    setIsSpinOpen(false);
+    setSuccessOrder({
+      ...pendingOrderInfo,
+      spin_reward: rewardBadgeText,
+    });
+    setCountdown(15);
   };
 
   return (
@@ -290,11 +338,18 @@ export default function PaymentPage() {
           </div>
 
           {/* Total Payment Summary */}
-          <div className="bg-white p-4 rounded-2xl border-2 border-[#ffde59] shadow-sm">
-            <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">
-              Total Tagihan ({items.reduce((acc, i) => acc + i.quantity, 0)} Menu)
-            </span>
-            <span className="text-2xl sm:text-3xl font-black text-[#b80000] tracking-tight block mt-0.5">
+          <div className="bg-white p-4 rounded-2xl border-2 border-[#ffde59] shadow-sm space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                Total Tagihan ({items.reduce((acc, i) => acc + i.quantity, 0)} Menu)
+              </span>
+              {hasSpin && (
+                <span className="text-[10px] font-black bg-[#ffde59] text-[#b80000] px-2 py-0.5 rounded-full">
+                  +1x Spin
+                </span>
+              )}
+            </div>
+            <span className="text-2xl sm:text-3xl font-black text-[#b80000] tracking-tight block">
               {formatPrice(total)}
             </span>
           </div>
@@ -400,6 +455,12 @@ export default function PaymentPage() {
         </div>
       </div>
 
+      {/* 🎡 LUCKY SPIN WHEEL MODAL */}
+      <SpinWheelModal
+        isOpen={isSpinOpen}
+        onFinish={handleSpinFinish}
+      />
+
       {/* POPUP MODAL NOMOR ANTREAN */}
       <AnimatePresence>
         {successOrder && (
@@ -412,7 +473,7 @@ export default function PaymentPage() {
               className="bg-white rounded-[2.5rem] shadow-2xl p-6 sm:p-8 max-w-lg w-full text-center border-4 border-[#ffde59] flex flex-col items-center relative overflow-hidden"
             >
               {/* Brand Top Header */}
-              <div className="flex items-center gap-2.5 bg-amber-50 px-4 py-1.5 rounded-full border border-amber-200 mb-4">
+              <div className="flex items-center gap-2.5 bg-amber-50 px-4 py-1.5 rounded-full border border-amber-200 mb-3">
                 <div className="w-7 h-7 p-0.5 bg-white rounded-lg border border-[#ffde59] flex items-center justify-center">
                   <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
                 </div>
@@ -423,20 +484,20 @@ export default function PaymentPage() {
               </div>
 
               {/* Success Icon */}
-              <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-3 shadow-inner">
-                <CheckCircle2 size={38} />
+              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-2 shadow-inner">
+                <CheckCircle2 size={36} />
               </div>
 
               <h2 className="text-2xl sm:text-3xl font-black text-gray-900 leading-tight">
                 Pesanan Diterima!
               </h2>
-              <p className="text-gray-500 text-xs sm:text-sm font-medium mt-1">
+              <p className="text-gray-500 text-xs sm:text-sm font-medium mt-0.5">
                 Silakan simpan & foto nomor antrean ini
               </p>
 
               {/* BIG QUEUE NUMBER DISPLAY */}
-              <div className="w-full bg-gradient-to-br from-red-50 to-amber-50 py-5 px-6 rounded-3xl my-4 border-2 border-red-200 shadow-inner">
-                <span className="text-xs font-black text-gray-500 uppercase tracking-[0.25em] block mb-1">
+              <div className="w-full bg-gradient-to-br from-red-50 to-amber-50 py-4 sm:py-5 px-6 rounded-3xl my-3 border-2 border-red-200 shadow-inner">
+                <span className="text-xs font-black text-gray-500 uppercase tracking-[0.25em] block mb-0.5">
                   NOMOR ANTREAN KAMU
                 </span>
                 <p className="text-6xl sm:text-7xl font-black text-[#b80000] tracking-tight drop-shadow-sm font-sans">
@@ -452,10 +513,20 @@ export default function PaymentPage() {
                 </div>
               </div>
 
+              {/* 🎁 WON SPIN REWARD BADGE (IF PLAYED) */}
+              {successOrder.spin_reward && (
+                <div className="w-full bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50 border-2 border-[#ffde59] p-3 rounded-2xl mb-3 flex items-center justify-center gap-2 shadow-sm animate-pulse">
+                  <Sparkles size={18} className="text-[#b80000] shrink-0" />
+                  <span className="text-xs sm:text-sm font-black text-[#b80000]">
+                    HADIAH SPIN: {successOrder.spin_reward}
+                  </span>
+                </div>
+              )}
+
               {/* Estimated Time Info */}
-              <div className="flex items-center justify-center gap-2 bg-amber-50/80 text-gray-700 px-4 py-2.5 rounded-xl border border-amber-200 text-xs font-medium w-full mb-4">
+              <div className="flex items-center justify-center gap-2 bg-amber-50/80 text-gray-700 px-4 py-2 rounded-xl border border-amber-200 text-xs font-medium w-full mb-3">
                 <Clock size={16} className="text-[#b80000] animate-pulse shrink-0" />
-                <span>Estimasi waktu penyajian: <strong className="text-gray-900 font-bold">10 - 15 menit</strong></span>
+                <span>Estimasi penyajian: <strong className="text-gray-900 font-bold">10 - 15 menit</strong></span>
               </div>
 
               {/* Finish Actions */}

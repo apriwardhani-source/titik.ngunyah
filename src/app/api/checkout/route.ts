@@ -1,10 +1,18 @@
 import { NextResponse } from 'next/server';
 import { getDbPool } from '@/lib/db';
+import { SPIN_PRICE } from '@/lib/spinConfig';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { items, customer_name = 'Guest', payment_method = 'qris', customer_photo = null } = body;
+    const { 
+      items, 
+      customer_name = 'Guest', 
+      payment_method = 'qris', 
+      customer_photo = null,
+      has_spin = false,
+      spin_reward = null
+    } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
@@ -66,14 +74,30 @@ export async function POST(request: Request) {
         });
       }
 
-      const total = subtotal; // Tax is 0 for now
+      // Add Lucky Spin price if purchased
+      const spinAmount = has_spin ? SPIN_PRICE : 0;
+      const total = subtotal + spinAmount;
+
       const orderStatus = payment_method === 'cash' ? 'waiting_payment' : 'waiting_for_kitchen';
       const paymentStatus = payment_method === 'cash' ? 'pending' : 'paid';
 
-      // 3. Insert into orders table with customer_photo
+      // 3. Insert into orders table with customer_photo, spin_reward, has_spin
       const [orderResult]: any = await connection.query(
-        'INSERT INTO orders (order_number, queue_number, customer_name, customer_photo, subtotal, tax, total, payment_method, payment_status, order_status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
-        [orderNumber, queueNumber, customer_name, customer_photo, subtotal, 0, total, payment_method, paymentStatus, orderStatus]
+        'INSERT INTO orders (order_number, queue_number, customer_name, customer_photo, spin_reward, has_spin, subtotal, tax, total, payment_method, payment_status, order_status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
+        [
+          orderNumber, 
+          queueNumber, 
+          customer_name, 
+          customer_photo, 
+          spin_reward, 
+          has_spin ? 1 : 0, 
+          subtotal, 
+          0, 
+          total, 
+          payment_method, 
+          paymentStatus, 
+          orderStatus
+        ]
       );
 
       const orderId = orderResult.insertId;
@@ -97,6 +121,8 @@ export async function POST(request: Request) {
           queue_number: queueNumber,
           total,
           payment_method,
+          has_spin: Boolean(has_spin),
+          spin_reward,
         },
       });
     } catch (err) {

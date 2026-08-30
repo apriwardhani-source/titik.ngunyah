@@ -24,6 +24,8 @@ export interface Order {
   createdAt: number;
   db_id?: number; // Internal ID
   customer_photo?: string | null;
+  spin_reward?: string | null;
+  has_spin?: boolean;
 }
 
 interface OrderState {
@@ -140,6 +142,8 @@ export const useOrderStore = create<OrderState>()(
                 createdAt: new Date(order.created_at).getTime(),
                 db_id: order.id,
                 customer_photo: order.customer_photo || null,
+                spin_reward: order.spin_reward || null,
+                has_spin: Boolean(order.has_spin),
               };
             });
 

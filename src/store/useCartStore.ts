@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { SPIN_PRICE } from '@/lib/spinConfig';
 
 export interface CartItemOptions {
   kebab?: string;
@@ -22,9 +23,12 @@ export interface CartItem {
 
 interface CartState {
   items: CartItem[];
+  hasSpin: boolean;
   addItem: (item: CartItem) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
+  toggleSpin: () => void;
+  setSpin: (hasSpin: boolean) => void;
   clearCart: () => void;
   getTotalItems: () => number;
   getTotalPrice: () => number;
@@ -34,6 +38,7 @@ export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
+      hasSpin: false,
       addItem: (newItem) => {
         set((state) => {
           const existingItem = state.items.find((item) => item.id === newItem.id);
@@ -61,12 +66,15 @@ export const useCartStore = create<CartState>()(
           ),
         }));
       },
-      clearCart: () => set({ items: [] }),
+      toggleSpin: () => set((state) => ({ hasSpin: !state.hasSpin })),
+      setSpin: (hasSpin: boolean) => set({ hasSpin }),
+      clearCart: () => set({ items: [], hasSpin: false }),
       getTotalItems: () => {
         return get().items.reduce((total, item) => total + item.quantity, 0);
       },
       getTotalPrice: () => {
-        return get().items.reduce((total, item) => total + item.price * item.quantity, 0);
+        const itemsTotal = get().items.reduce((total, item) => total + item.price * item.quantity, 0);
+        return itemsTotal + (get().hasSpin ? SPIN_PRICE : 0);
       },
     }),
     {
