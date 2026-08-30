@@ -38,11 +38,12 @@ export default function PaymentPage() {
           if (item.notes) optionParts.push(`Note: ${item.notes}`);
 
           return {
-            menu_id: item.productId || item.id,
+            menu_id: item.productId || Number(String(item.id).split("-")[0]) || item.id,
             qty: item.quantity,
             price: item.price,
             notes: optionParts.join(" | "),
           };
+
         }),
         customer_name: "Guest Kiosk",
         payment_method: selectedMethod,

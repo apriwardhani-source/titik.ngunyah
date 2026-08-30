@@ -28,8 +28,30 @@ export default function OrdersPage() {
   const [viewMode, setViewMode] = useState<"kitchen" | "table">("kitchen");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-
+  const prevOrderCountRef = useState<number>(0);
   const statuses = ["Menunggu", "Dibayar", "Disiapkan", "Siap", "Selesai", "Dibatalkan"];
+  
+  // Helper to play chime sound when a new order arrives
+  const playOrderChime = () => {
+    try {
+      const soundEnabled = localStorage.getItem("tn_sound_enabled");
+      if (soundEnabled === "false") return;
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15); // A5
+      gain.gain.setValueAtTime(0.35, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.45);
+    } catch (e) {
+      console.log("Audio alert not permitted yet", e);
+    }
+  };
 
   // Polling auto-refresh every 5 seconds for live orders
   useEffect(() => {
@@ -40,6 +62,16 @@ export default function OrdersPage() {
 
     return () => clearInterval(interval);
   }, [fetchOrders]);
+
+  // Check for new orders to trigger chime
+  useEffect(() => {
+    if (orders.length > 0) {
+      if (prevOrderCountRef[0] > 0 && orders.length > prevOrderCountRef[0]) {
+        playOrderChime();
+      }
+      prevOrderCountRef[1](orders.length);
+    }
+  }, [orders]);
 
   const handleManualRefresh = async () => {
     setIsRefreshing(true);

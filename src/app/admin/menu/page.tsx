@@ -223,7 +223,16 @@ export default function MenuManagementPage() {
                     </td>
                     <td className="px-6 py-4">
                       <button onClick={() => openMenuModal(menu)} className="text-blue-600 font-bold hover:text-blue-800 mr-4">Edit</button>
-                      <button onClick={() => deleteProduct(menu.id)} className="text-red-600 font-bold hover:text-red-800">Hapus</button>
+                      <button 
+                        onClick={() => {
+                          if (confirm(`Yakin ingin menghapus menu "${menu.name}"? Tindakan ini tidak dapat dibatalkan.`)) {
+                            deleteProduct(menu.id);
+                          }
+                        }} 
+                        className="text-red-600 font-bold hover:text-red-800"
+                      >
+                        Hapus
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -245,7 +254,16 @@ export default function MenuManagementPage() {
                     <td className="px-6 py-4 text-gray-600">{products.filter(p => p.category === cat.name).length} menu</td>
                     <td className="px-6 py-4">
                       <button onClick={() => openCategoryModal(cat)} className="text-blue-600 font-bold hover:text-blue-800 mr-4">Edit</button>
-                      <button onClick={() => deleteCategory(cat.id)} className="text-red-600 font-bold hover:text-red-800">Hapus</button>
+                      <button 
+                        onClick={() => {
+                          if (confirm(`Yakin ingin menghapus kategori "${cat.name}"?`)) {
+                            deleteCategory(cat.id);
+                          }
+                        }} 
+                        className="text-red-600 font-bold hover:text-red-800"
+                      >
+                        Hapus
+                      </button>
                     </td>
                   </tr>
                 ))}
