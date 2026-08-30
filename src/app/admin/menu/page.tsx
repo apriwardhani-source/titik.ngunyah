@@ -131,15 +131,36 @@ export default function MenuManagementPage() {
 
   return (
     <div className="space-y-8 h-full flex flex-col relative">
-      <div className="flex justify-between items-center shrink-0">
-        <h2 className="text-3xl font-bold text-gray-900">Manajemen Menu</h2>
-        <button 
-          onClick={() => activeTab === "menu" ? openMenuModal() : openCategoryModal()}
-          className="bg-[#E53935] hover:bg-[#C62828] text-white px-6 py-2.5 rounded-lg font-bold shadow-md transition-colors"
-        >
-          + Tambah {activeTab === "menu" ? "Menu" : "Kategori"}
-        </button>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900">Manajemen Menu</h2>
+          <p className="text-gray-500 text-sm mt-1">Kelola harga, foto, visibilitas, dan status terlaris</p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={async () => {
+              if (confirm("Reset & sinkronkan semua menu ke 12 menu resmi sesuai Brosur Bazar Technopreneurship?")) {
+                const res = await fetch("/api/menus/seed-flyer", { method: "POST" });
+                const data = await res.json();
+                alert(data.message || "Menu berhasil disinkronkan!");
+                fetchMenus(true);
+              }
+            }}
+            className="bg-amber-500 hover:bg-amber-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md transition-all active:scale-95 flex items-center gap-1.5"
+          >
+            <span>⚡</span> Sinkronkan Sesuai Brosur
+          </button>
+
+          <button 
+            onClick={() => activeTab === "menu" ? openMenuModal() : openCategoryModal()}
+            className="bg-[#E53935] hover:bg-[#C62828] text-white px-6 py-2.5 rounded-xl font-bold shadow-md transition-all active:scale-95"
+          >
+            + Tambah {activeTab === "menu" ? "Menu" : "Kategori"}
+          </button>
+        </div>
       </div>
+
 
       <div className="flex gap-4 shrink-0 border-b border-gray-200">
         <button

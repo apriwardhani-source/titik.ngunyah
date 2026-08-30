@@ -66,9 +66,11 @@ export default function MenuPage() {
     } else if (nameLower.includes("ngunyah asik") || (isPaket && nameLower.includes("asik"))) {
       kebabOptions = ["Extra Daging", "Extra Sosis", "Extra Mix (Daging + Sosis)"];
     } else if (nameLower.includes("sultan")) {
-      kebabOptions = ["Kebab Extra (Daging x Sosis)"];
+      kebabOptions = ["Extra Daging", "Extra Sosis", "Extra Mix (Daging + Sosis)"];
     } else if (nameLower.includes("puas")) {
-      kebabOptions = ["Kebab Daging Porsi Puas"];
+      kebabOptions = ["Daging Puas", "Sosis Puas", "Mix Puas"];
+    } else if (isPaket && isKebab) {
+      kebabOptions = ["Daging", "Sosis", "Mix (Daging + Sosis)"];
     }
 
     // 2. Extra Options (for Kebab Daging Satuan)
@@ -121,12 +123,15 @@ export default function MenuPage() {
     } else if (nameLower.includes("ngunyah asik") || (isPaket && nameLower.includes("asik"))) {
       setSelectedKebab("Extra Mix (Daging + Sosis)");
     } else if (nameLower.includes("sultan")) {
-      setSelectedKebab("Kebab Extra (Daging x Sosis)");
+      setSelectedKebab("Extra Mix (Daging + Sosis)");
     } else if (nameLower.includes("puas")) {
-      setSelectedKebab("Kebab Daging Porsi Puas");
+      setSelectedKebab("Daging Puas");
+    } else if (isPaket) {
+      setSelectedKebab("Daging");
     } else {
       setSelectedKebab("");
     }
+
 
     // Set default drink
     if (isPaket) {
