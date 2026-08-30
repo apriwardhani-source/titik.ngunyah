@@ -42,12 +42,13 @@ export async function GET() {
       });
     }
 
-    // 4. Map final response
+    // 4. Map final response including customer_photo
     const result = orders.map((order: any) => ({
       id: order.id,
       order_number: order.order_number,
       queue_number: order.queue_number,
       customer_name: order.customer_name,
+      customer_photo: order.customer_photo || null,
       subtotal: Number(order.subtotal),
       tax: Number(order.tax),
       total: Number(order.total),

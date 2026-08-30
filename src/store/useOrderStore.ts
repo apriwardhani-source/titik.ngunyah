@@ -23,6 +23,7 @@ export interface Order {
   time: string;
   createdAt: number;
   db_id?: number; // Internal ID
+  customer_photo?: string | null;
 }
 
 interface OrderState {
@@ -138,6 +139,7 @@ export const useOrderStore = create<OrderState>()(
                 time,
                 createdAt: new Date(order.created_at).getTime(),
                 db_id: order.id,
+                customer_photo: order.customer_photo || null,
               };
             });
 

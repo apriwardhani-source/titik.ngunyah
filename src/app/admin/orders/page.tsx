@@ -24,6 +24,8 @@ import {
   Ban,
   Phone,
   ArrowRight,
+  Camera,
+  X,
 } from "lucide-react";
 
 export default function OrdersPage() {
@@ -32,6 +34,7 @@ export default function OrdersPage() {
   const [statusFilter, setStatusFilter] = useState<string>("Aktif");
   const [viewMode, setViewMode] = useState<"kitchen" | "table">("kitchen");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const prevOrderCountRef = useState<number>(0);
   const statuses = ["Menunggu", "Dibayar", "Disiapkan", "Siap", "Selesai", "Dibatalkan"];
@@ -252,13 +255,32 @@ export default function OrdersPage() {
                   >
                     {/* Ticket Header */}
                     <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/70">
-                      <div>
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest block">
-                          No. Antrean
-                        </span>
-                        <span className={`text-4xl font-black tracking-tight ${isCancelled ? "text-gray-400 line-through" : "text-[#E53935]"}`}>
-                          {order.id}
-                        </span>
+                      <div className="flex items-center gap-3">
+                        {order.customer_photo ? (
+                          <div
+                            onClick={() => setPreviewPhoto(order.customer_photo!)}
+                            className="relative w-14 h-14 rounded-2xl overflow-hidden border-2 border-[#ffde59] shadow-md shrink-0 cursor-pointer hover:scale-105 transition-transform bg-gray-900 group"
+                            title="Klik untuk perbesar foto pelanggan"
+                          >
+                            <img src={order.customer_photo} alt="Foto Pelanggan" className="w-full h-full object-cover" />
+                            <span className="absolute inset-x-0 bottom-0 bg-[#b80000]/90 text-[8px] font-black text-white text-center py-0.5 uppercase tracking-wider">
+                              Foto
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="w-12 h-12 rounded-2xl bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-400 shrink-0">
+                            <User size={22} />
+                          </div>
+                        )}
+
+                        <div>
+                          <span className="text-xs font-bold text-gray-400 uppercase tracking-widest block">
+                            No. Antrean
+                          </span>
+                          <span className={`text-3xl sm:text-4xl font-black tracking-tight ${isCancelled ? "text-gray-400 line-through" : "text-[#b80000]"}`}>
+                            {order.id}
+                          </span>
+                        </div>
                       </div>
 
                       <div className="flex items-center gap-2">
@@ -473,9 +495,33 @@ export default function OrdersPage() {
                 <tbody className="divide-y divide-gray-100 text-sm">
                   {filteredOrders.map((order) => (
                     <tr key={order.id} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="px-6 py-4 font-black text-xl text-[#E53935]">{order.id}</td>
+                      <td className="px-6 py-4 font-black text-xl text-[#b80000]">{order.id}</td>
                       <td className="px-6 py-4 text-gray-500 font-medium text-xs">{order.time}</td>
-                      <td className="px-6 py-4 font-bold text-gray-900">{order.customer}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          {order.customer_photo ? (
+                            <div
+                              onClick={() => setPreviewPhoto(order.customer_photo!)}
+                              className="w-11 h-11 rounded-xl overflow-hidden border-2 border-[#ffde59] shadow-sm shrink-0 cursor-pointer hover:scale-110 transition-transform bg-gray-900"
+                              title="Klik untuk perbesar foto"
+                            >
+                              <img src={order.customer_photo} alt="Foto" className="w-full h-full object-cover" />
+                            </div>
+                          ) : (
+                            <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 shrink-0">
+                              <User size={18} />
+                            </div>
+                          )}
+                          <div>
+                            <p className="font-bold text-gray-900 leading-tight">{order.customer}</p>
+                            {order.customer_photo && (
+                              <span className="text-[10px] text-[#b80000] font-black bg-red-50 px-1.5 py-0.5 rounded border border-red-100 inline-block mt-0.5">
+                                Foto Kiosk
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </td>
                       <td className="px-6 py-4 text-gray-700 max-w-sm">
                         <div className="space-y-1">
                           {order.rawItems && order.rawItems.length > 0 ? (
@@ -520,18 +566,16 @@ export default function OrdersPage() {
                           {order.status !== "Dibatalkan" && order.status !== "Selesai" && (
                             <button
                               onClick={() => handleCancelOrder(order.id)}
-                              className="text-amber-600 font-bold text-xs hover:bg-amber-50 p-1 rounded-lg transition-colors"
-                              title="Batalkan Pesanan"
+                              className="text-red-500 font-bold text-xs hover:bg-red-50 px-2.5 py-1 rounded-lg transition-colors"
                             >
-                              <Ban size={15} />
+                              Batal
                             </button>
                           )}
                           <button
                             onClick={() => handleDeleteOrder(order.id)}
-                            className="text-red-600 font-bold text-xs hover:bg-red-50 p-1 rounded-lg transition-colors"
-                            title="Hapus Pesanan"
+                            className="text-gray-400 hover:text-red-600 font-bold text-xs hover:bg-red-50 px-2.5 py-1 rounded-lg transition-colors"
                           >
-                            <Trash2 size={15} />
+                            Hapus
                           </button>
                         </div>
                       </td>
@@ -544,7 +588,7 @@ export default function OrdersPage() {
         )}
       </div>
 
-      {/* Modal Detail Pop-up */}
+      {/* MODAL DETAIL PESANAN */}
       <AnimatePresence>
         {selectedOrder && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -559,7 +603,7 @@ export default function OrdersPage() {
                   <span className="text-xs font-bold text-gray-400 uppercase tracking-widest block">
                     Detail Pesanan
                   </span>
-                  <h3 className="text-4xl font-black text-[#E53935] mt-1">{selectedOrder.id}</h3>
+                  <h3 className="text-4xl font-black text-[#b80000] mt-1">{selectedOrder.id}</h3>
                 </div>
                 <button
                   onClick={() => setSelectedOrder(null)}
@@ -568,6 +612,36 @@ export default function OrdersPage() {
                   ✕
                 </button>
               </div>
+
+              {/* Customer Photo Box in Detail */}
+              {selectedOrder.customer_photo && (
+                <div className="mb-6 p-4 bg-amber-50 rounded-2xl border-2 border-[#ffde59] flex items-center gap-4">
+                  <div
+                    onClick={() => setPreviewPhoto(selectedOrder.customer_photo!)}
+                    className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-[#b80000] shadow-md cursor-pointer hover:scale-105 transition-transform bg-gray-900 shrink-0"
+                  >
+                    <img
+                      src={selectedOrder.customer_photo}
+                      alt="Foto Pelanggan"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div>
+                    <h4 className="font-black text-gray-900 text-sm flex items-center gap-1.5">
+                      <Camera size={16} className="text-[#b80000]" /> Foto Pelanggan (Kiosk)
+                    </h4>
+                    <p className="text-xs text-gray-600 mt-0.5">
+                      Foto otomatis saat konfirmasi pesanan di iPad untuk mengenali pelanggan.
+                    </p>
+                    <button
+                      onClick={() => setPreviewPhoto(selectedOrder.customer_photo!)}
+                      className="text-xs font-bold text-[#b80000] underline mt-1 block"
+                    >
+                      Klik untuk perbesar
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between text-sm">
@@ -611,7 +685,7 @@ export default function OrdersPage() {
                 </div>
                 <div className="flex justify-between font-black text-lg text-gray-900 mt-4 pt-3 border-t border-gray-100">
                   <span>Total Pembayaran:</span>
-                  <span className="text-[#E53935]">{selectedOrder.formattedTotal}</span>
+                  <span className="text-[#b80000]">{selectedOrder.formattedTotal}</span>
                 </div>
               </div>
 
@@ -631,6 +705,48 @@ export default function OrdersPage() {
                   Hapus Permanen
                 </button>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* POPUP FULL PHOTO PREVIEW MODAL */}
+      <AnimatePresence>
+        {previewPhoto && (
+          <div
+            className="fixed inset-0 bg-black/85 backdrop-blur-md z-[60] flex items-center justify-center p-4"
+            onClick={() => setPreviewPhoto(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              className="bg-white rounded-3xl p-4 max-w-md w-full shadow-2xl border-4 border-[#ffde59] relative overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-3">
+                <h4 className="font-black text-base text-gray-900 flex items-center gap-2">
+                  <Camera size={18} className="text-[#b80000]" /> Foto Wajah Pelanggan
+                </h4>
+                <button
+                  onClick={() => setPreviewPhoto(null)}
+                  className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 transition-all font-bold"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="w-full aspect-[4/3] rounded-2xl overflow-hidden bg-black border border-gray-200 shadow-inner">
+                <img
+                  src={previewPhoto}
+                  alt="Foto Pelanggan Lengkap"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+
+              <p className="text-center text-xs text-gray-500 font-medium mt-3">
+                Gunakan foto ini untuk mengenali pelanggan saat memanggil nomor antrean.
+              </p>
             </motion.div>
           </div>
         )}

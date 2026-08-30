@@ -4,7 +4,7 @@ import { getDbPool } from '@/lib/db';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { items, customer_name = 'Guest', payment_method = 'qris' } = body;
+    const { items, customer_name = 'Guest', payment_method = 'qris', customer_photo = null } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
@@ -70,10 +70,10 @@ export async function POST(request: Request) {
       const orderStatus = payment_method === 'cash' ? 'waiting_payment' : 'waiting_for_kitchen';
       const paymentStatus = payment_method === 'cash' ? 'pending' : 'paid';
 
-      // 3. Insert into orders table
+      // 3. Insert into orders table with customer_photo
       const [orderResult]: any = await connection.query(
-        'INSERT INTO orders (order_number, queue_number, customer_name, subtotal, tax, total, payment_method, payment_status, order_status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
-        [orderNumber, queueNumber, customer_name, subtotal, 0, total, payment_method, paymentStatus, orderStatus]
+        'INSERT INTO orders (order_number, queue_number, customer_name, customer_photo, subtotal, tax, total, payment_method, payment_status, order_status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
+        [orderNumber, queueNumber, customer_name, customer_photo, subtotal, 0, total, payment_method, paymentStatus, orderStatus]
       );
 
       const orderId = orderResult.insertId;
