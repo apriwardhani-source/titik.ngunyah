@@ -16,7 +16,9 @@ import {
   ChevronRight, 
   ShoppingBag,
   Info,
-  Clock
+  Clock,
+  CheckCircle2,
+  Ban
 } from "lucide-react";
 import Link from "next/link";
 
@@ -37,8 +39,8 @@ export default function MenuPage() {
   // Customization Choices State
   const [selectedKebab, setSelectedKebab] = useState<string>("");
   const [selectedDrink, setSelectedDrink] = useState<string>("");
-  const [selectedSpicy, setSelectedSpicy] = useState<string>("Pedas 🌶️");
-  const [selectedMayo, setSelectedMayo] = useState<string>("Pake Mayo 🍶");
+  const [selectedSpicy, setSelectedSpicy] = useState<string>("Pedas");
+  const [selectedMayo, setSelectedMayo] = useState<string>("Pake Mayo");
   const [selectedExtra, setSelectedExtra] = useState<string>("");
   const [qty, setQty] = useState<number>(1);
   const [notes, setNotes] = useState<string>("");
@@ -90,8 +92,8 @@ export default function MenuPage() {
     }
 
     if (isKebab) {
-      setSelectedSpicy("Pedas 🌶️");
-      setSelectedMayo("Pake Mayo 🍶");
+      setSelectedSpicy("Pedas");
+      setSelectedMayo("Pake Mayo");
     } else {
       setSelectedSpicy("");
       setSelectedMayo("");
@@ -153,8 +155,8 @@ export default function MenuPage() {
     }
 
     if (!isDrinkOnly) {
-      spicyOptions = ["Pedas 🌶️", "Ekstra Pedas 🔥🔥", "Manis 🍯"];
-      mayoOptions = ["Pake Mayo 🍶", "Tanpa Mayo 🚫"];
+      spicyOptions = ["Pedas", "Ekstra Pedas", "Manis"];
+      mayoOptions = ["Pake Mayo", "Tanpa Mayo"];
     }
 
     return {
@@ -388,7 +390,7 @@ export default function MenuPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 z-40 backdrop-blur-sm"
+              className="fixed inset-0 bg-black/70 z-40 backdrop-blur-sm"
               onClick={() => setSelectedProduct(null)}
             />
 
@@ -399,20 +401,38 @@ export default function MenuPage() {
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
               className="fixed top-0 right-0 w-full max-w-xl md:max-w-2xl h-[100dvh] bg-white z-50 shadow-2xl flex flex-col justify-between overflow-hidden"
             >
-              {/* Modal Top Bar */}
-              <div className="p-5 md:p-6 bg-[#b80000] text-white flex items-center justify-between shrink-0 border-b-2 border-[#ffde59]">
-                <div>
-                  <h3 className="text-2xl font-black text-white">{selectedProduct.name}</h3>
-                  <span className="text-xs font-bold text-[#ffde59] uppercase tracking-wider">
-                    {selectedProduct.category}
-                  </span>
-                </div>
+              {/* Modal Hero Image & Top Bar */}
+              <div className="relative h-60 sm:h-64 w-full bg-amber-100 overflow-hidden shrink-0">
+                <img
+                  src={selectedProduct.img}
+                  alt={selectedProduct.name}
+                  className="w-full h-full object-cover"
+                />
+                {/* Gradient Dark Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/20" />
+
+                {/* Close Button */}
                 <button
                   onClick={() => setSelectedProduct(null)}
-                  className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors"
+                  className="absolute top-4 right-4 w-11 h-11 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all shadow-lg backdrop-blur-sm active:scale-90 z-10 border border-white/20"
                 >
-                  <X size={20} />
+                  <X size={22} />
                 </button>
+
+                {/* Category Pill & Product Title */}
+                <div className="absolute bottom-4 left-6 right-6 z-10">
+                  <span className="bg-[#ffde59] text-[#b80000] px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider shadow-md inline-block mb-1.5 border border-white/40">
+                    {selectedProduct.category}
+                  </span>
+                  <h3 className="text-2xl sm:text-3xl font-black text-white drop-shadow-md leading-tight">
+                    {selectedProduct.name}
+                  </h3>
+                  {selectedProduct.desc && (
+                    <p className="text-xs sm:text-sm text-gray-200 line-clamp-1 mt-1 font-medium">
+                      {selectedProduct.desc}
+                    </p>
+                  )}
+                </div>
               </div>
 
               {/* Modal Scrollable Body */}
@@ -421,9 +441,9 @@ export default function MenuPage() {
                 {productOptions.kebabChoices.length > 0 && (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <h4 className="text-lg font-black text-gray-900 flex items-center gap-2">
-                        <Utensils size={20} className="text-[#b80000]" />
-                        Pilih Varian Kebab <span className="text-[#b80000] text-sm">*Wajib</span>
+                      <h4 className="text-base sm:text-lg font-black text-gray-900 flex items-center gap-2">
+                        <Utensils size={18} className="text-[#b80000]" />
+                        Pilih Varian Kebab <span className="text-[#b80000] text-xs font-bold">*Wajib</span>
                       </h4>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -450,9 +470,9 @@ export default function MenuPage() {
                 {productOptions.drinkChoices.length > 0 && (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <h4 className="text-lg font-black text-gray-900 flex items-center gap-2">
-                        <Coffee size={20} className="text-[#b80000]" />
-                        Pilih Minuman Pendamping <span className="text-[#b80000] text-sm">*Wajib</span>
+                      <h4 className="text-base sm:text-lg font-black text-gray-900 flex items-center gap-2">
+                        <Coffee size={18} className="text-[#b80000]" />
+                        Pilih Minuman Pendamping <span className="text-[#b80000] text-xs font-bold">*Wajib</span>
                       </h4>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
@@ -478,8 +498,8 @@ export default function MenuPage() {
                 {/* 3. Extra Meat Option for Single Kebab */}
                 {productOptions.extraChoices.length > 0 && (
                   <div className="space-y-3">
-                    <h4 className="text-lg font-black text-gray-900 flex items-center gap-2">
-                      <Sparkles size={20} className="text-[#b80000]" />
+                    <h4 className="text-base sm:text-lg font-black text-gray-900 flex items-center gap-2">
+                      <Sparkles size={18} className="text-[#b80000]" />
                       Pilihan Porsi Daging
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -508,91 +528,200 @@ export default function MenuPage() {
                   </div>
                 )}
 
-                {/* 4. Taste / Spicy Option */}
+                {/* 4. Taste / Spicy Level (No Emojis, Pure Visual Indicators) */}
                 {productOptions.spicyOptions.length > 0 && (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <h4 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                      <h4 className="text-base sm:text-lg font-black text-gray-900 flex items-center gap-2">
                         <Flame size={20} className="text-[#b80000]" />
-                        Pilihan Rasa / Pedas <span className="text-[#b80000] text-sm">*Wajib</span>
+                        Pilihan Rasa / Pedas <span className="text-[#b80000] text-xs font-bold">*Wajib</span>
                       </h4>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-3">
-                      {productOptions.spicyOptions.map((lvl) => (
-                        <button
-                          key={lvl}
-                          type="button"
-                          onClick={() => setSelectedSpicy(lvl)}
-                          className={`p-4 rounded-2xl border-2 text-center font-bold transition-all flex flex-col items-center justify-center gap-1 ${
-                            selectedSpicy === lvl
-                              ? "border-[#b80000] bg-red-50 text-[#b80000] shadow-sm ring-2 ring-[#ffde59]"
-                              : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
-                          }`}
-                        >
-                          <span className="text-sm md:text-base">{lvl}</span>
-                        </button>
-                      ))}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {/* Pedas Option */}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedSpicy("Pedas")}
+                        className={`p-4 rounded-2xl border-2 text-left transition-all relative flex flex-col justify-between gap-3 ${
+                          selectedSpicy === "Pedas"
+                            ? "border-orange-500 bg-orange-50/90 shadow-md ring-2 ring-orange-200"
+                            : "border-gray-200 bg-white hover:border-gray-300"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
+                              <Flame size={18} className="fill-orange-500" />
+                            </div>
+                            <span className="font-black text-base text-gray-900">Pedas</span>
+                          </div>
+                          {selectedSpicy === "Pedas" && (
+                            <div className="w-5 h-5 rounded-full bg-orange-500 text-white flex items-center justify-center shrink-0">
+                              <Check size={12} />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-orange-700 bg-orange-100/60 px-2.5 py-1 rounded-lg">
+                          <span className="w-2 h-2 rounded-full bg-orange-500 inline-block" />
+                          <span className="w-2 h-2 rounded-full bg-gray-300 inline-block" />
+                          <span className="ml-1 text-[11px]">Level 1 Standar</span>
+                        </div>
+                      </button>
+
+                      {/* Ekstra Pedas Option */}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedSpicy("Ekstra Pedas")}
+                        className={`p-4 rounded-2xl border-2 text-left transition-all relative flex flex-col justify-between gap-3 ${
+                          selectedSpicy === "Ekstra Pedas"
+                            ? "border-[#b80000] bg-red-50 shadow-md ring-2 ring-red-200"
+                            : "border-gray-200 bg-white hover:border-gray-300"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-xl bg-red-100 text-[#b80000] flex items-center justify-center shrink-0">
+                              <Flame size={18} className="fill-[#b80000]" />
+                            </div>
+                            <span className="font-black text-base text-[#b80000]">Ekstra Pedas</span>
+                          </div>
+                          {selectedSpicy === "Ekstra Pedas" && (
+                            <div className="w-5 h-5 rounded-full bg-[#b80000] text-white flex items-center justify-center shrink-0">
+                              <Check size={12} />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-[#b80000] bg-red-100/80 px-2.5 py-1 rounded-lg">
+                          <span className="w-2 h-2 rounded-full bg-[#b80000] inline-block" />
+                          <span className="w-2 h-2 rounded-full bg-[#b80000] inline-block" />
+                          <span className="ml-1 text-[11px]">Level 2 Ekstra Panas</span>
+                        </div>
+                      </button>
+
+                      {/* Manis Option */}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedSpicy("Manis")}
+                        className={`p-4 rounded-2xl border-2 text-left transition-all relative flex flex-col justify-between gap-3 ${
+                          selectedSpicy === "Manis"
+                            ? "border-amber-400 bg-amber-50/90 shadow-md ring-2 ring-amber-200"
+                            : "border-gray-200 bg-white hover:border-gray-300"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                              <Sparkles size={18} className="text-amber-600" />
+                            </div>
+                            <span className="font-black text-base text-gray-900">Manis</span>
+                          </div>
+                          {selectedSpicy === "Manis" && (
+                            <div className="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0">
+                              <Check size={12} />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-amber-800 bg-amber-100/60 px-2.5 py-1 rounded-lg">
+                          <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
+                          <span className="w-2 h-2 rounded-full bg-gray-300 inline-block" />
+                          <span className="ml-1 text-[11px]">Tidak Pedas</span>
+                        </div>
+                      </button>
                     </div>
                   </div>
                 )}
 
-                {/* 5. Mayo Option */}
+                {/* 5. Mayo Option (No Emojis, Pure Visual Indicators) */}
                 {productOptions.mayoOptions.length > 0 && (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <h4 className="text-lg font-black text-gray-900 flex items-center gap-2">
-                        <Sparkles size={20} className="text-[#b80000]" />
-                        Pilihan Mayonaise <span className="text-[#b80000] text-sm">*Wajib</span>
+                      <h4 className="text-base sm:text-lg font-black text-gray-900 flex items-center gap-2">
+                        <Sparkles size={18} className="text-[#b80000]" />
+                        Pilihan Mayonaise <span className="text-[#b80000] text-xs font-bold">*Wajib</span>
                       </h4>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      {productOptions.mayoOptions.map((m) => (
-                        <button
-                          key={m}
-                          type="button"
-                          onClick={() => setSelectedMayo(m)}
-                          className={`p-4 rounded-2xl border-2 text-center font-bold transition-all flex items-center justify-center gap-2 ${
-                            selectedMayo === m
-                              ? "border-[#b80000] bg-red-50 text-[#b80000] shadow-sm ring-2 ring-[#ffde59]"
-                              : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
-                          }`}
-                        >
-                          <span className="text-sm md:text-base">{m}</span>
-                          {selectedMayo === m && <Check size={16} className="text-[#b80000]" />}
-                        </button>
-                      ))}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedMayo("Pake Mayo")}
+                        className={`p-4 rounded-2xl border-2 text-left transition-all flex items-center justify-between ${
+                          selectedMayo === "Pake Mayo"
+                            ? "border-emerald-500 bg-emerald-50 shadow-md ring-2 ring-emerald-200"
+                            : "border-gray-200 bg-white hover:border-gray-300"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                            <CheckCircle2 size={18} />
+                          </div>
+                          <div>
+                            <p className="font-black text-base text-gray-900 leading-tight">Pake Mayonaise</p>
+                            <p className="text-xs text-gray-500 mt-0.5">Saus mayo lembut & gurih</p>
+                          </div>
+                        </div>
+                        {selectedMayo === "Pake Mayo" && (
+                          <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0">
+                            <Check size={12} />
+                          </div>
+                        )}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setSelectedMayo("Tanpa Mayo")}
+                        className={`p-4 rounded-2xl border-2 text-left transition-all flex items-center justify-between ${
+                          selectedMayo === "Tanpa Mayo"
+                            ? "border-gray-400 bg-gray-100 shadow-md ring-2 ring-gray-200"
+                            : "border-gray-200 bg-white hover:border-gray-300"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-xl bg-gray-200 text-gray-700 flex items-center justify-center shrink-0">
+                            <Ban size={18} />
+                          </div>
+                          <div>
+                            <p className="font-black text-base text-gray-900 leading-tight">Tanpa Mayonaise</p>
+                            <p className="text-xs text-gray-500 mt-0.5">Hanya saus bumbu asli</p>
+                          </div>
+                        </div>
+                        {selectedMayo === "Tanpa Mayo" && (
+                          <div className="w-5 h-5 rounded-full bg-gray-500 text-white flex items-center justify-center shrink-0">
+                            <Check size={12} />
+                          </div>
+                        )}
+                      </button>
                     </div>
                   </div>
                 )}
 
                 {/* 6. Custom Notes */}
                 <div className="space-y-2">
-                  <h4 className="text-lg font-black text-gray-900">Catatan Khusus (Opsional)</h4>
+                  <h4 className="text-base sm:text-lg font-black text-gray-900">Catatan Khusus (Opsional)</h4>
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Contoh: Saus sedikit saja, jangan pakai bawang bombay..."
-                    className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 text-base focus:outline-none focus:ring-2 focus:ring-[#b80000] resize-none h-24"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-[#b80000] resize-none h-24"
                   />
                 </div>
               </div>
 
               {/* Bottom Action Bar */}
-              <div className="p-6 md:p-8 bg-amber-50/80 backdrop-blur border-t-2 border-amber-200 flex items-center justify-between shrink-0 gap-4">
+              <div className="p-5 md:p-6 bg-amber-50/80 backdrop-blur border-t-2 border-amber-200 flex items-center justify-between shrink-0 gap-4">
                 {/* Quantity Counter */}
-                <div className="flex items-center gap-4 bg-white rounded-full p-2 border border-gray-200 shadow-sm shrink-0">
+                <div className="flex items-center gap-3 bg-white rounded-full p-1.5 border border-gray-200 shadow-sm shrink-0">
                   <button
                     onClick={() => setQty(Math.max(1, qty - 1))}
-                    className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-700 hover:bg-gray-200 active:scale-90 transition-all font-bold text-xl"
+                    className="w-11 h-11 rounded-full bg-gray-100 flex items-center justify-center text-gray-700 hover:bg-gray-200 active:scale-90 transition-all font-bold text-xl"
                   >
                     -
                   </button>
-                  <span className="font-black text-2xl w-8 text-center text-gray-900">{qty}</span>
+                  <span className="font-black text-xl w-7 text-center text-gray-900">{qty}</span>
                   <button
                     onClick={() => setQty(qty + 1)}
-                    className="w-12 h-12 rounded-full bg-[#b80000] text-white flex items-center justify-center hover:bg-[#940000] active:scale-90 transition-all font-bold text-xl"
+                    className="w-11 h-11 rounded-full bg-[#b80000] text-white flex items-center justify-center hover:bg-[#940000] active:scale-90 transition-all font-bold text-xl"
                   >
                     +
                   </button>
@@ -601,13 +730,13 @@ export default function MenuPage() {
                 {/* Add to Cart Button */}
                 <button
                   onClick={handleAddToCart}
-                  className="flex-1 bg-[#b80000] hover:bg-[#940000] text-[#ffde59] py-5 px-6 rounded-2xl font-black text-lg md:text-xl shadow-xl shadow-red-900/20 transition-all flex items-center justify-between active:scale-[0.98] border-2 border-[#ffde59]"
+                  className="flex-1 bg-[#b80000] hover:bg-[#940000] text-[#ffde59] py-4 sm:py-5 px-6 rounded-2xl font-black text-base sm:text-xl shadow-xl shadow-red-900/20 transition-all flex items-center justify-between active:scale-[0.98] border-2 border-[#ffde59]"
                 >
                   <span className="flex items-center gap-2">
                     <ShoppingBag size={22} />
                     <span>Tambahkan Pesanan</span>
                   </span>
-                  <span className="font-black text-white bg-black/30 px-3 py-1 rounded-xl">
+                  <span className="font-black text-white bg-black/30 px-3 py-1 rounded-xl text-sm sm:text-base">
                     {formatPrice(currentUnitPrice * qty)}
                   </span>
                 </button>

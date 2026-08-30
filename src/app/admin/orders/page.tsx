@@ -361,6 +361,7 @@ export default function OrdersPage() {
                                       {isKebab && <Utensils size={12} />}
                                       {isDrink && <Coffee size={12} />}
                                       {isLevel && <Flame size={12} />}
+                                      {isMayo && <CheckCircle size={12} />}
                                       <span>{part}</span>
                                     </div>
                                   );
