@@ -92,6 +92,11 @@ export default function CartPage() {
                           <Flame size={12} /> {item.options.spicy}
                         </span>
                       )}
+                      {item.options.mayo && (
+                        <span className="inline-flex items-center gap-1 text-xs font-bold bg-amber-50 text-amber-700 px-2.5 py-1 rounded-lg border border-amber-100">
+                          {item.options.mayo}
+                        </span>
+                      )}
                       {item.options.extra && (
                         <span className="inline-flex items-center gap-1 text-xs font-bold bg-purple-50 text-purple-700 px-2.5 py-1 rounded-lg border border-purple-100">
                           {item.options.extra}

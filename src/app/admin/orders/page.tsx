@@ -337,7 +337,8 @@ export default function OrdersPage() {
                                 {item.notes.split(" | ").map((part, pIdx) => {
                                   const isKebab = part.startsWith("Kebab:");
                                   const isDrink = part.startsWith("Minum:");
-                                  const isLevel = part.startsWith("Level:");
+                                  const isLevel = part.startsWith("Level:") || part.startsWith("Rasa:");
+                                  const isMayo = part.startsWith("Mayo:");
                                   const isExtra = part.startsWith("Porsi:");
 
                                   return (
@@ -350,6 +351,8 @@ export default function OrdersPage() {
                                           ? "bg-blue-100 text-blue-800 border border-blue-200"
                                           : isLevel
                                           ? "bg-red-100 text-red-800 border border-red-200"
+                                          : isMayo
+                                          ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
                                           : isExtra
                                           ? "bg-purple-100 text-purple-800 border border-purple-200"
                                           : "bg-amber-100 text-amber-900 border border-amber-200"

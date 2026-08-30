@@ -33,7 +33,8 @@ export default function PaymentPage() {
           const optionParts: string[] = [];
           if (item.options?.kebab) optionParts.push(`Kebab: ${item.options.kebab}`);
           if (item.options?.drink) optionParts.push(`Minum: ${item.options.drink}`);
-          if (item.options?.spicy) optionParts.push(`Level: ${item.options.spicy}`);
+          if (item.options?.spicy) optionParts.push(`Rasa: ${item.options.spicy}`);
+          if (item.options?.mayo) optionParts.push(`Mayo: ${item.options.mayo}`);
           if (item.options?.extra) optionParts.push(`Porsi: ${item.options.extra}`);
           if (item.notes) optionParts.push(`Note: ${item.notes}`);
 

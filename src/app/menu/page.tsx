@@ -17,7 +17,8 @@ export default function MenuPage() {
   // Option state
   const [selectedKebab, setSelectedKebab] = useState<string>("");
   const [selectedDrink, setSelectedDrink] = useState<string>("");
-  const [selectedSpicy, setSelectedSpicy] = useState<string>("Sedang 🌶️");
+  const [selectedSpicy, setSelectedSpicy] = useState<string>("Pedas 🌶️");
+  const [selectedMayo, setSelectedMayo] = useState<string>("Pake Mayo 🍶");
   const [selectedExtra, setSelectedExtra] = useState<string>("");
 
   const addItem = useCartStore((state) => state.addItem);
@@ -92,10 +93,12 @@ export default function MenuPage() {
       }
     }
 
-    // 4. Spicy Level (for all Kebabs & Packages)
+    // 4. Taste / Spicy Level Options (for all Kebabs & Packages)
     let spicyOptions: string[] = [];
+    let mayoOptions: string[] = [];
     if (isKebab && !isDrinkOnly) {
-      spicyOptions = ["Tidak Pedas ⚪", "Sedang 🌶️", "Extra Pedas 🔥🔥"];
+      spicyOptions = ["Pedas 🌶️", "Ekstra Pedas 🔥🔥", "Manis 🍯"];
+      mayoOptions = ["Pake Mayo 🍶", "Tanpa Mayo 🚫"];
     }
 
     return {
@@ -104,6 +107,7 @@ export default function MenuPage() {
       kebabOptions,
       drinkOptions,
       spicyOptions,
+      mayoOptions,
       extraOptions,
     };
   }, [selectedProduct]);
@@ -144,8 +148,16 @@ export default function MenuPage() {
       setSelectedDrink("");
     }
 
-    // Set default spicy
-    setSelectedSpicy("Sedang 🌶️");
+    const isDrinkOnly = product.category.toLowerCase().includes("minum") && !isPaket;
+
+    // Set default spicy & mayo (only for kebabs/packages, NOT drinks)
+    if (!isDrinkOnly) {
+      setSelectedSpicy("Pedas 🌶️");
+      setSelectedMayo("Pake Mayo 🍶");
+    } else {
+      setSelectedSpicy("");
+      setSelectedMayo("");
+    }
 
     // Set default extra
     if (nameLower === "kebab daging" || (nameLower.includes("kebab daging") && !isPaket)) {
@@ -168,12 +180,16 @@ export default function MenuPage() {
   const handleAddToCart = () => {
     if (!selectedProduct) return;
 
+    const isPaket = selectedProduct.category.toLowerCase().includes("paket") || selectedProduct.name.toLowerCase().includes("paket");
+    const isDrinkOnly = selectedProduct.category.toLowerCase().includes("minum") && !isPaket;
+
     // Generate unique ID for cart grouping based on options
     const optionKey = [
       selectedProduct.id,
       selectedKebab,
       selectedDrink,
-      selectedSpicy,
+      !isDrinkOnly ? selectedSpicy : "",
+      !isDrinkOnly ? selectedMayo : "",
       selectedExtra,
     ]
       .filter(Boolean)
@@ -189,7 +205,8 @@ export default function MenuPage() {
       options: {
         kebab: selectedKebab || undefined,
         drink: selectedDrink || undefined,
-        spicy: selectedSpicy || undefined,
+        spicy: (!isDrinkOnly && selectedSpicy) ? selectedSpicy : undefined,
+        mayo: (!isDrinkOnly && selectedMayo) ? selectedMayo : undefined,
         extra: selectedExtra || undefined,
       },
       notes: notes.trim() || undefined,
@@ -452,13 +469,13 @@ export default function MenuPage() {
                   </div>
                 )}
 
-                {/* 4. Spicy Level Option */}
+                {/* 4. Taste / Spicy Option */}
                 {productOptions.spicyOptions.length > 0 && (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <h4 className="text-lg font-black text-gray-900 flex items-center gap-2">
                         <Flame size={20} className="text-[#E53935]" />
-                        Tingkat Kepedasan <span className="text-[#E53935] text-sm">*Wajib</span>
+                        Pilihan Rasa / Pedas <span className="text-[#E53935] text-sm">*Wajib</span>
                       </h4>
                     </div>
 
@@ -475,6 +492,36 @@ export default function MenuPage() {
                           }`}
                         >
                           <span className="text-base">{lvl}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 5. Mayo Option */}
+                {productOptions.mayoOptions.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                        <Sparkles size={20} className="text-[#E53935]" />
+                        Pilihan Mayonaise <span className="text-[#E53935] text-sm">*Wajib</span>
+                      </h4>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      {productOptions.mayoOptions.map((m) => (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => setSelectedMayo(m)}
+                          className={`p-4 rounded-2xl border-2 text-center font-bold transition-all flex items-center justify-center gap-2 ${
+                            selectedMayo === m
+                              ? "border-[#E53935] bg-red-50/80 text-[#E53935] shadow-sm ring-2 ring-red-100"
+                              : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                          }`}
+                        >
+                          <span className="text-base">{m}</span>
+                          {selectedMayo === m && <Check size={16} className="text-[#E53935]" />}
                         </button>
                       ))}
                     </div>

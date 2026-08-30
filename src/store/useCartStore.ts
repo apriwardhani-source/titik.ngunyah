@@ -5,6 +5,7 @@ export interface CartItemOptions {
   kebab?: string;
   drink?: string;
   spicy?: string;
+  mayo?: string;
   extra?: string;
 }
 
