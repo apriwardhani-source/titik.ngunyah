@@ -29,15 +29,25 @@ export default function PaymentPage() {
 
     try {
       const payload = {
-        items: items.map((item) => ({
-          menu_id: item.id,
-          qty: item.quantity,
-          price: item.price,
-          notes: item.notes || "",
-        })),
+        items: items.map((item) => {
+          const optionParts: string[] = [];
+          if (item.options?.kebab) optionParts.push(`Kebab: ${item.options.kebab}`);
+          if (item.options?.drink) optionParts.push(`Minum: ${item.options.drink}`);
+          if (item.options?.spicy) optionParts.push(`Level: ${item.options.spicy}`);
+          if (item.options?.extra) optionParts.push(`Porsi: ${item.options.extra}`);
+          if (item.notes) optionParts.push(`Note: ${item.notes}`);
+
+          return {
+            menu_id: item.productId || item.id,
+            qty: item.quantity,
+            price: item.price,
+            notes: optionParts.join(" | "),
+          };
+        }),
         customer_name: "Guest Kiosk",
         payment_method: selectedMethod,
       };
+
 
       const res = await fetch(`${getApiUrl()}/checkout`, {
         method: "POST",
