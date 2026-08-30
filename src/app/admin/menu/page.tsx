@@ -3,6 +3,29 @@
 import { useState, useEffect } from "react";
 import { useMenuStore, Product, Category } from "@/store/useMenuStore";
 import { formatPrice } from "@/lib/utils";
+import { 
+  UploadCloud, 
+  Sparkles, 
+  Image as ImageIcon, 
+  Trash2, 
+  Edit3, 
+  Plus, 
+  RefreshCw,
+  Check
+} from "lucide-react";
+
+const PRESET_PHOTOS = [
+  { name: "Paket Ngunyah Mix", url: "/photos/paket-ngunyah-mix.png" },
+  { name: "Paket Ngunyah Puas", url: "/photos/paket-ngunyah-puas.png" },
+  { name: "Paket Sultan Ngunyah", url: "/photos/paket-sultan-ngunyah.png" },
+  { name: "Kebab Daging", url: "/photos/kebab-daging-besar.png" },
+  { name: "Kebab Sosis", url: "/photos/kebab-sosis-besar.png" },
+  { name: "Kebab Mix", url: "/photos/kebab-mix-besar.png" },
+  { name: "Es Teh", url: "/photos/es-teh.png" },
+  { name: "Es Squash Jeruk", url: "/photos/es-milo.png" },
+  { name: "Es Moka", url: "/photos/es-milo.png" },
+  { name: "Air Es (Acqua)", url: "/photos/air-es.png" },
+];
 
 export default function MenuManagementPage() {
   const [activeTab, setActiveTab] = useState<"menu" | "category">("menu");
@@ -20,18 +43,19 @@ export default function MenuManagementPage() {
   const [editCategoryId, setEditCategoryId] = useState<string | null>(null);
   const [categoryName, setCategoryName] = useState("");
 
-  // Form States - Menu (using snake_case to match API/Product type)
+  // Form States - Menu
   const [editMenuId, setEditMenuId] = useState<string | number | null>(null);
   const [menuForm, setMenuForm] = useState({
     name: "",
     category: "",
     price: 0,
     desc: "",
-    img: "/photos/default.png",
+    img: "/photos/paket-ngunyah-mix.png",
     best_seller: false,
     visible: true,
   });
   const [uploading, setUploading] = useState(false);
+  const [showPresets, setShowPresets] = useState(false);
 
   // --- Category Actions ---
   const openCategoryModal = (cat?: Category) => {
@@ -64,7 +88,7 @@ export default function MenuManagementPage() {
         category: product.category,
         price: product.price,
         desc: product.desc || "",
-        img: product.img,
+        img: product.img || "/photos/paket-ngunyah-mix.png",
         best_seller: product.best_seller,
         visible: product.visible,
       });
@@ -72,51 +96,73 @@ export default function MenuManagementPage() {
       setEditMenuId(null);
       setMenuForm({
         name: "",
-        category: categories[0]?.name || "",
+        category: categories[0]?.name || "Menu Paket",
         price: 0,
         desc: "",
-        img: "/photos/default.png",
+        img: "/photos/paket-ngunyah-mix.png",
         best_seller: false,
         visible: true,
       });
     }
+    setShowPresets(false);
     setIsMenuModalOpen(true);
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Direct client-side compression to WebP/JPEG data URL (100% reliable on Vercel)
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type and size
     const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     if (!allowedTypes.includes(file.type)) {
       alert("Format file tidak didukung. Gunakan JPEG, PNG, WebP, atau GIF.");
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      alert("Ukuran file maks 5MB.");
-      return;
-    }
 
     setUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
 
-    try {
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
-      if (data.url) {
-        setMenuForm(prev => ({ ...prev, img: data.url }));
-      }
-    } catch (error) {
-      console.error("Upload failed", error);
-      alert("Gagal mengunggah gambar");
-    } finally {
+    const reader = new FileReader();
+    reader.onload = (readerEvent) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const MAX_DIM = 600;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_DIM) {
+            height *= MAX_DIM / width;
+            width = MAX_DIM;
+          }
+        } else {
+          if (height > MAX_DIM) {
+            width *= MAX_DIM / height;
+            height = MAX_DIM;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL("image/webp", 0.85);
+          setMenuForm((prev) => ({ ...prev, img: dataUrl }));
+        }
+        setUploading(false);
+      };
+      img.onerror = () => {
+        alert("Gagal membaca file gambar.");
+        setUploading(false);
+      };
+      img.src = readerEvent.target?.result as string;
+    };
+    reader.onerror = () => {
+      alert("Gagal membaca file.");
       setUploading(false);
-    }
+    };
+    reader.readAsDataURL(file);
   };
 
   const saveMenu = async () => {
@@ -124,7 +170,7 @@ export default function MenuManagementPage() {
     if (editMenuId) {
       await updateProduct(editMenuId, menuForm);
     } else {
-      await addProduct(menuForm); // Backend generates ID
+      await addProduct(menuForm);
     }
     setIsMenuModalOpen(false);
   };
@@ -140,7 +186,7 @@ export default function MenuManagementPage() {
         <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={async () => {
-              if (confirm("Reset & sinkronkan semua menu ke 12 menu resmi sesuai Brosur Bazar Technopreneurship?")) {
+              if (confirm("Reset & sinkronkan semua menu ke 11 menu resmi sesuai Brosur Bazar Technopreneurship?")) {
                 const res = await fetch("/api/menus/seed-flyer", { method: "POST" });
                 const data = await res.json();
                 alert(data.message || "Menu berhasil disinkronkan!");
@@ -154,13 +200,12 @@ export default function MenuManagementPage() {
 
           <button 
             onClick={() => activeTab === "menu" ? openMenuModal() : openCategoryModal()}
-            className="bg-[#E53935] hover:bg-[#C62828] text-white px-6 py-2.5 rounded-xl font-bold shadow-md transition-all active:scale-95"
+            className="bg-[#E53935] hover:bg-[#C62828] text-white px-6 py-2.5 rounded-xl font-bold shadow-md transition-all active:scale-95 flex items-center gap-1.5"
           >
-            + Tambah {activeTab === "menu" ? "Menu" : "Kategori"}
+            <Plus size={18} /> Tambah {activeTab === "menu" ? "Menu" : "Kategori"}
           </button>
         </div>
       </div>
-
 
       <div className="flex gap-4 shrink-0 border-b border-gray-200">
         <button
@@ -200,7 +245,7 @@ export default function MenuManagementPage() {
                 {products.map((menu) => (
                   <tr key={menu.id} className="hover:bg-gray-50/50">
                     <td className="px-6 py-4">
-                      <img src={menu.img} alt={menu.name} className="w-12 h-12 rounded object-cover border" />
+                      <img src={menu.img} alt={menu.name} className="w-14 h-14 rounded-xl object-cover border border-gray-200 bg-gray-50" />
                     </td>
                     <td className="px-6 py-4 font-bold text-gray-900">{menu.name}</td>
                     <td className="px-6 py-4 text-gray-600">{menu.category}</td>
@@ -275,80 +320,155 @@ export default function MenuManagementPage() {
 
       {/* MODALS */}
       {isCategoryModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-          <div className="bg-white p-8 rounded-2xl w-full max-w-md">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white p-8 rounded-3xl w-full max-w-md shadow-2xl">
             <h3 className="text-2xl font-bold mb-6">{editCategoryId ? "Edit Kategori" : "Tambah Kategori"}</h3>
             <input
               type="text"
               value={categoryName}
               onChange={(e) => setCategoryName(e.target.value)}
               placeholder="Nama kategori..."
-              className="w-full border rounded-lg p-3 mb-6 focus:ring-2 focus:ring-red-500 outline-none"
+              className="w-full border rounded-xl p-3 mb-6 focus:ring-2 focus:ring-red-500 outline-none"
             />
             <div className="flex justify-end gap-4">
               <button onClick={() => setIsCategoryModalOpen(false)} className="px-4 py-2 font-bold text-gray-500 hover:text-gray-700">Batal</button>
-              <button onClick={saveCategory} className="px-4 py-2 font-bold bg-[#E53935] text-white rounded-lg hover:bg-red-700">Simpan</button>
+              <button onClick={saveCategory} className="px-5 py-2.5 font-bold bg-[#E53935] text-white rounded-xl hover:bg-red-700 shadow-md">Simpan</button>
             </div>
           </div>
         </div>
       )}
 
       {isMenuModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-          <div className="bg-white p-8 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-2xl font-bold mb-6">{editMenuId ? "Edit Menu" : "Tambah Menu"}</h3>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white p-8 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+            <h3 className="text-2xl font-black mb-6 text-gray-900">{editMenuId ? "Edit Menu" : "Tambah Menu"}</h3>
             
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Gambar</label>
-                <div className="flex items-center gap-4">
-                  <img src={menuForm.img} alt="Preview" className="w-24 h-24 object-cover rounded-lg border" />
-                  <div className="flex-1">
-                    <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleFileUpload} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100" />
-                    {uploading && <p className="text-sm text-blue-500 mt-2">Mengunggah...</p>}
+            <div className="space-y-5">
+              {/* Gambar Picker */}
+              <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 space-y-4">
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">Foto Produk</label>
+                <div className="flex flex-col sm:flex-row items-center gap-5">
+                  <img 
+                    src={menuForm.img} 
+                    alt="Preview" 
+                    className="w-28 h-28 object-cover rounded-2xl border-2 border-gray-200 shadow-sm bg-white shrink-0" 
+                  />
+                  
+                  <div className="flex-1 w-full space-y-3">
+                    <label className="block">
+                      <span className="sr-only">Pilih foto dari perangkat</span>
+                      <input 
+                        type="file" 
+                        accept="image/jpeg,image/png,image/webp,image/gif" 
+                        onChange={handleFileUpload} 
+                        className="block w-full text-xs text-gray-500 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#E53935] file:text-white hover:file:bg-[#C62828] file:cursor-pointer cursor-pointer" 
+                      />
+                    </label>
+                    {uploading && <p className="text-xs font-bold text-blue-600 animate-pulse">Memproses foto...</p>}
+                    
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowPresets(!showPresets)}
+                        className="text-xs font-bold text-gray-600 hover:text-[#E53935] bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-1.5 transition-colors"
+                      >
+                        <ImageIcon size={14} />
+                        {showPresets ? "Tutup Galeri Foto" : "Pilih dari Galeri Foto Brosur"}
+                      </button>
+                    </div>
                   </div>
                 </div>
+
+                {/* Preset Gallery Picker */}
+                {showPresets && (
+                  <div className="pt-3 border-t border-gray-200 space-y-2">
+                    <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Klik foto untuk memilih:</p>
+                    <div className="grid grid-cols-5 gap-2 max-h-40 overflow-y-auto p-1">
+                      {PRESET_PHOTOS.map((p) => (
+                        <button
+                          key={p.name}
+                          type="button"
+                          onClick={() => {
+                            setMenuForm((prev) => ({ ...prev, img: p.url }));
+                          }}
+                          className={`group relative rounded-xl overflow-hidden border-2 aspect-square p-1 transition-all ${
+                            menuForm.img === p.url ? "border-[#E53935] ring-2 ring-red-100" : "border-gray-200 hover:border-gray-400"
+                          }`}
+                          title={p.name}
+                        >
+                          <img src={p.url} alt={p.name} className="w-full h-full object-cover rounded-lg" />
+                          {menuForm.img === p.url && (
+                            <div className="absolute inset-0 bg-red-600/30 flex items-center justify-center">
+                              <Check size={16} className="text-white drop-shadow" />
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Nama Menu</label>
-                <input type="text" value={menuForm.name} onChange={e => setMenuForm({...menuForm, name: e.target.value})} className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-red-500 outline-none" />
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Nama Menu</label>
+                <input 
+                  type="text" 
+                  value={menuForm.name} 
+                  onChange={e => setMenuForm({...menuForm, name: e.target.value})} 
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-red-500 outline-none" 
+                  placeholder="Nama menu..."
+                />
               </div>
 
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Kategori</label>
-                  <select value={menuForm.category} onChange={e => setMenuForm({...menuForm, category: e.target.value})} className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-red-500 outline-none">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Kategori</label>
+                  <select 
+                    value={menuForm.category} 
+                    onChange={e => setMenuForm({...menuForm, category: e.target.value})} 
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-red-500 outline-none cursor-pointer"
+                  >
                     {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                   </select>
                 </div>
-                <div className="flex-1">
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Harga (Rp)</label>
-                  <input type="number" value={menuForm.price} onChange={e => setMenuForm({...menuForm, price: Number(e.target.value)})} className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-red-500 outline-none" />
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Harga (Rp)</label>
+                  <input 
+                    type="number" 
+                    value={menuForm.price} 
+                    onChange={e => setMenuForm({...menuForm, price: Number(e.target.value)})} 
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-red-500 outline-none" 
+                    placeholder="18000"
+                  />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Deskripsi</label>
-                <textarea value={menuForm.desc} onChange={e => setMenuForm({...menuForm, desc: e.target.value})} className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-red-500 outline-none h-24 resize-none" />
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Deskripsi / Rincian Menu</label>
+                <textarea 
+                  value={menuForm.desc} 
+                  onChange={e => setMenuForm({...menuForm, desc: e.target.value})} 
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm font-medium focus:ring-2 focus:ring-red-500 outline-none h-24 resize-none" 
+                  placeholder="Deskripsi bahan dan isi menu..."
+                />
               </div>
 
               <div className="flex gap-6 pt-2">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" checked={menuForm.best_seller} onChange={e => setMenuForm({...menuForm, best_seller: e.target.checked})} className="w-5 h-5 text-red-600 rounded focus:ring-red-500" />
-                  <span className="font-bold text-gray-700">Terlaris</span>
+                  <span className="font-bold text-sm text-gray-700">Tandai Terlaris</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" checked={menuForm.visible} onChange={e => setMenuForm({...menuForm, visible: e.target.checked})} className="w-5 h-5 text-red-600 rounded focus:ring-red-500" />
-                  <span className="font-bold text-gray-700">Tampilkan Menu</span>
+                  <span className="font-bold text-sm text-gray-700">Tampilkan di Kiosk</span>
                 </label>
               </div>
             </div>
 
-            <div className="flex justify-end gap-4 mt-8 pt-4 border-t">
-              <button onClick={() => setIsMenuModalOpen(false)} className="px-4 py-2 font-bold text-gray-500 hover:text-gray-700">Batal</button>
-              <button onClick={saveMenu} className="px-4 py-2 font-bold bg-[#E53935] text-white rounded-lg hover:bg-red-700" disabled={uploading}>
-                Simpan
+            <div className="flex justify-end gap-3 mt-8 pt-4 border-t border-gray-100">
+              <button onClick={() => setIsMenuModalOpen(false)} className="px-5 py-2.5 font-bold text-sm text-gray-500 hover:text-gray-700">Batal</button>
+              <button onClick={saveMenu} className="px-6 py-2.5 font-bold text-sm bg-[#E53935] hover:bg-[#C62828] text-white rounded-xl shadow-md transition-all active:scale-95" disabled={uploading}>
+                Simpan Perubahan
               </button>
             </div>
           </div>

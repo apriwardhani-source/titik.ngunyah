@@ -32,27 +32,32 @@ export async function POST(req: NextRequest) {
 
     const buffer = Buffer.from(await file.arrayBuffer());
     
-    // Generate a safe, unique filename (strip non-alphanumeric chars)
-    const ext = path.extname(file.name).toLowerCase();
-    const safeName = file.name
-      .replace(ext, '')
-      .replace(/[^a-zA-Z0-9-_]/g, '-')
-      .substring(0, 50);
-    const filename = `${Date.now()}-${safeName}${ext}`;
-    const uploadDir = path.join(process.cwd(), 'public/photos');
-    
-    // Ensure the directory exists
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
+    // Try writing to public/photos (works in local dev)
+    try {
+      const ext = path.extname(file.name).toLowerCase() || '.png';
+      const safeName = file.name
+        .replace(ext, '')
+        .replace(/[^a-zA-Z0-9-_]/g, '-')
+        .substring(0, 50);
+      const filename = `${Date.now()}-${safeName}${ext}`;
+      const uploadDir = path.join(process.cwd(), 'public/photos');
+      
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+
+      const filepath = path.join(uploadDir, filename);
+      fs.writeFileSync(filepath, buffer);
+
+      return NextResponse.json({ url: `/photos/${filename}` });
+    } catch (fsErr) {
+      // Fallback for Vercel / serverless environments with read-only filesystem:
+      // Return base64 data URI directly to store in TiDB LONGTEXT column
+      const base64Data = `data:${file.type};base64,${buffer.toString('base64')}`;
+      return NextResponse.json({ url: base64Data });
     }
-
-    const filepath = path.join(uploadDir, filename);
-    fs.writeFileSync(filepath, buffer);
-
-    // Return the URL for the client to use
-    return NextResponse.json({ url: `/photos/${filename}` });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Upload error:", error);
-    return NextResponse.json({ error: 'Failed to upload file' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Failed to upload file' }, { status: 500 });
   }
 }
