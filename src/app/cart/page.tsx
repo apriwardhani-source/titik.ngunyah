@@ -16,12 +16,13 @@ import {
   Flame, 
   Sparkles, 
   Gift, 
-  CheckCircle2 
+  CheckCircle2,
+  User
 } from "lucide-react";
 
 export default function CartPage() {
   const router = useRouter();
-  const { items, hasSpin, toggleSpin, removeItem, updateQuantity, getTotalPrice } = useCartStore();
+  const { items, hasSpin, customerName, setCustomerName, toggleSpin, removeItem, updateQuantity, getTotalPrice } = useCartStore();
 
   const total = getTotalPrice();
 
@@ -232,7 +233,27 @@ export default function CartPage() {
             </div>
           )}
 
-          <div className="h-px bg-gray-100 my-0.5 sm:my-1" />
+          {/* Form Input Nama Pemesan (Opsional / Pre-Order) */}
+          <div className="bg-amber-50/80 p-3 sm:p-3.5 rounded-2xl border-2 border-amber-200 space-y-1.5 shadow-inner">
+            <label className="text-[11px] font-black text-gray-800 flex items-center justify-between uppercase tracking-wider">
+              <span className="flex items-center gap-1.5 text-[#b80000]">
+                <User size={14} /> Nama Pemesan
+              </span>
+              <span className="text-gray-400 font-bold normal-case text-[10px] bg-white px-2 py-0.5 rounded-md border border-amber-200">
+                Opsional
+              </span>
+            </label>
+            <input
+              type="text"
+              value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)}
+              placeholder="Ketik namamu / Pre-order..."
+              className="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-900 placeholder:text-gray-400 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-[#b80000] focus:border-transparent transition-all"
+              maxLength={40}
+            />
+          </div>
+
+          <div className="h-px bg-gray-100 my-0.5" />
           <div className="flex justify-between items-baseline">
             <span className="text-base sm:text-lg md:text-xl font-bold text-gray-900">Total Tagihan</span>
             <span className="text-2xl sm:text-3xl md:text-4xl font-black text-[#b80000]">{formatPrice(total)}</span>

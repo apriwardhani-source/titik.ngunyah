@@ -22,11 +22,10 @@ import {
 
 export default function PaymentPage() {
   const router = useRouter();
-  const { items, hasSpin, getTotalPrice, clearCart } = useCartStore();
+  const { items, hasSpin, customerName, setCustomerName, getTotalPrice, clearCart } = useCartStore();
   const total = getTotalPrice();
 
   const [method, setMethod] = useState<"qris" | "cash">("qris");
-  const [customerName, setCustomerName] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
