@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useCartStore } from "@/store/useCartStore";
-import { useCameraStore } from "@/store/useCameraStore";
 import { useRouter } from "next/navigation";
 import { formatPrice } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,7 +16,8 @@ import {
   Clock,
   Utensils,
   Sparkles,
-  Gift
+  Gift,
+  User
 } from "lucide-react";
 
 export default function PaymentPage() {
@@ -26,12 +26,9 @@ export default function PaymentPage() {
   const total = getTotalPrice();
 
   const [method, setMethod] = useState<"qris" | "cash">("qris");
+  const [customerName, setCustomerName] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  // Hidden video & canvas for quiet customer recognition snapshot
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Lucky Spin Modal State
   const [isSpinOpen, setIsSpinOpen] = useState(false);
@@ -54,28 +51,6 @@ export default function PaymentPage() {
     spin_reward?: string | null;
   } | null>(null);
   const [countdown, setCountdown] = useState<number>(15);
-
-  // Reuse global camera stream (already initialized on splash page, no new permission prompt)
-  const cameraStream = useCameraStore((s) => s.stream);
-  const initCamera = useCameraStore((s) => s.initCamera);
-
-  useEffect(() => {
-    const setupVideo = async () => {
-      // If stream isn't ready yet (e.g. user navigated directly), try to init
-      if (!cameraStream || !cameraStream.active) {
-        await initCamera();
-      }
-
-      const stream = useCameraStore.getState().stream;
-      if (stream && videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play().catch(() => {});
-      }
-    };
-
-    setupVideo();
-    // Do NOT stop the stream on unmount - keep it alive for the kiosk session
-  }, [cameraStream, initCamera]);
 
   // Countdown timer when success popup is open
   useEffect(() => {
@@ -107,26 +82,6 @@ export default function PaymentPage() {
     setIsProcessing(true);
     setErrorMsg(null);
 
-    // Grab silent snapshot frame from front camera
-    let photoData: string | null = null;
-    if (videoRef.current && canvasRef.current) {
-      try {
-        const video = videoRef.current;
-        const canvas = canvasRef.current;
-        if (video.videoWidth > 0 && video.videoHeight > 0) {
-          canvas.width = 360;
-          canvas.height = Math.round((360 * video.videoHeight) / video.videoWidth);
-          const ctx = canvas.getContext("2d");
-          if (ctx) {
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            photoData = canvas.toDataURL("image/jpeg", 0.6); // Compact ~25-35KB JPEG
-          }
-        }
-      } catch (e) {
-        console.log("Bypassed snapshot:", e);
-      }
-    }
-
     try {
       const payload = {
         items: items.map((item) => {
@@ -145,8 +100,8 @@ export default function PaymentPage() {
             notes: optionParts.join(" | "),
           };
         }),
-        customer_name: "Pelanggan Kiosk",
-        customer_photo: photoData,
+        customer_name: customerName.trim() || "Pelanggan Kiosk",
+        customer_photo: null,
         payment_method: selectedMethod,
         has_spin: hasSpin,
       };
@@ -218,19 +173,6 @@ export default function PaymentPage() {
 
   return (
     <div className="flex flex-col h-[100dvh] max-h-[100dvh] bg-gradient-to-br from-[#FFFDF0] via-[#FFFBEB] to-[#FEF3C7] p-3 sm:p-5 md:p-6 overflow-hidden select-none font-sans relative">
-      {/* Hidden background camera elements for silent customer recognition */}
-      <video
-        ref={videoRef}
-        playsInline
-        muted
-        autoPlay
-        className="hidden pointer-events-none opacity-0 absolute -top-[9999px]"
-      />
-      <canvas
-        ref={canvasRef}
-        className="hidden pointer-events-none opacity-0 absolute -top-[9999px]"
-      />
-
       {/* Top Header Bar */}
       <div className="flex items-center justify-between mb-3 shrink-0">
         <div className="flex items-center gap-3 sm:gap-4">
@@ -262,9 +204,29 @@ export default function PaymentPage() {
 
       {/* Main Content Layout */}
       <div className="flex flex-col md:flex-row flex-1 gap-4 md:gap-6 min-h-0 overflow-hidden">
-        {/* Left Column: Method Selection & Total */}
+        {/* Left Column: Customer Name, Method Selection & Total */}
         <div className="w-full md:w-80 lg:w-96 flex flex-col justify-between shrink-0 space-y-3">
           <div className="space-y-2.5">
+            {/* Optional Customer Name Input */}
+            <div className="bg-white p-3.5 rounded-2xl border-2 border-amber-200 shadow-sm space-y-1.5">
+              <label className="text-[11px] font-black text-gray-700 flex items-center justify-between uppercase tracking-wider">
+                <span className="flex items-center gap-1.5 text-[#b80000]">
+                  <User size={14} /> Nama Pemesan
+                </span>
+                <span className="text-gray-400 font-bold normal-case text-[10px] bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                  Opsional / Pre-Order
+                </span>
+              </label>
+              <input
+                type="text"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                placeholder="Contoh: Dhani (Pre-Order) / Budi"
+                className="w-full bg-amber-50/60 border border-amber-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-900 placeholder:text-gray-400 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-[#b80000] focus:border-transparent transition-all"
+                maxLength={40}
+              />
+            </div>
+
             <span className="text-xs font-black text-gray-800 uppercase tracking-wider block">
               Pilihan Bayar:
             </span>

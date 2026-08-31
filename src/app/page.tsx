@@ -3,15 +3,11 @@
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ChevronRight, Utensils } from "lucide-react";
-import { useCameraStore } from "@/store/useCameraStore";
 
 export default function SplashPage() {
   const router = useRouter();
-  const initCamera = useCameraStore((s) => s.initCamera);
 
-  const handleStart = async () => {
-    // Request camera permission once here (user-triggered action = Safari grants persistent session permission)
-    await initCamera();
+  const handleStart = () => {
     router.push("/menu");
   };
 
