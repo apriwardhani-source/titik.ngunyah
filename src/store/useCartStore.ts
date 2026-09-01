@@ -25,12 +25,14 @@ interface CartState {
   items: CartItem[];
   hasSpin: boolean;
   customerName: string;
+  customerPhone: string;
   addItem: (item: CartItem) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   toggleSpin: () => void;
   setSpin: (hasSpin: boolean) => void;
   setCustomerName: (name: string) => void;
+  setCustomerPhone: (phone: string) => void;
   clearCart: () => void;
   getTotalItems: () => number;
   getTotalPrice: () => number;
@@ -42,6 +44,7 @@ export const useCartStore = create<CartState>()(
       items: [],
       hasSpin: false,
       customerName: '',
+      customerPhone: '',
       addItem: (newItem) => {
         set((state) => {
           const existingItem = state.items.find((item) => item.id === newItem.id);
@@ -72,7 +75,8 @@ export const useCartStore = create<CartState>()(
       toggleSpin: () => set((state) => ({ hasSpin: !state.hasSpin })),
       setSpin: (hasSpin: boolean) => set({ hasSpin }),
       setCustomerName: (customerName: string) => set({ customerName }),
-      clearCart: () => set({ items: [], hasSpin: false, customerName: '' }),
+      setCustomerPhone: (customerPhone: string) => set({ customerPhone }),
+      clearCart: () => set({ items: [], hasSpin: false, customerName: '', customerPhone: '' }),
       getTotalItems: () => {
         return get().items.reduce((total, item) => total + item.quantity, 0);
       },

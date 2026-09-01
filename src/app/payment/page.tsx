@@ -17,17 +17,25 @@ import {
   Utensils,
   Sparkles,
   Gift,
-  User
+  User,
+  Phone,
+  ArrowRight,
+  X
 } from "lucide-react";
 
 export default function PaymentPage() {
   const router = useRouter();
-  const { items, hasSpin, customerName, setCustomerName, getTotalPrice, clearCart } = useCartStore();
+  const { items, hasSpin, customerName, setCustomerName, customerPhone, setCustomerPhone, getTotalPrice, clearCart } = useCartStore();
   const total = getTotalPrice();
 
   const [method, setMethod] = useState<"qris" | "cash">("qris");
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Full-screen Customer Name & Phone Modal State
+  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+  const [inputName, setInputName] = useState(customerName || "");
+  const [inputPhone, setInputPhone] = useState(customerPhone || "");
 
   // Lucky Spin Modal State
   const [isSpinOpen, setIsSpinOpen] = useState(false);
@@ -50,6 +58,12 @@ export default function PaymentPage() {
     spin_reward?: string | null;
   } | null>(null);
   const [countdown, setCountdown] = useState<number>(15);
+
+  // Sync inputs with cart store when opened
+  useEffect(() => {
+    if (customerName) setInputName(customerName);
+    if (customerPhone) setInputPhone(customerPhone);
+  }, [customerName, customerPhone]);
 
   // Countdown timer when success popup is open
   useEffect(() => {
@@ -77,9 +91,23 @@ export default function PaymentPage() {
     return null;
   }
 
-  const handleProcessOrder = async (selectedMethod: "qris" | "cash") => {
+  // Triggered when user clicks main checkout button
+  const handleInitiateCheckout = (selectedMethod: "qris" | "cash") => {
+    setMethod(selectedMethod);
+    setErrorMsg(null);
+    setIsCustomerModalOpen(true);
+  };
+
+  const handleConfirmAndProcess = async (nameVal?: string, phoneVal?: string) => {
+    setIsCustomerModalOpen(false);
     setIsProcessing(true);
     setErrorMsg(null);
+
+    const finalName = (nameVal !== undefined ? nameVal : inputName).trim();
+    const finalPhone = (phoneVal !== undefined ? phoneVal : inputPhone).trim();
+
+    setCustomerName(finalName);
+    setCustomerPhone(finalPhone);
 
     try {
       const payload = {
@@ -99,9 +127,10 @@ export default function PaymentPage() {
             notes: optionParts.join(" | "),
           };
         }),
-        customer_name: customerName.trim() || "Pelanggan Kiosk",
+        customer_name: finalName || "Pelanggan Kiosk",
+        customer_phone: finalPhone || null,
         customer_photo: null,
-        payment_method: selectedMethod,
+        payment_method: method,
         has_spin: hasSpin,
       };
 
@@ -122,7 +151,7 @@ export default function PaymentPage() {
         order_number: data.data?.order_number || data.order_number || "ORD-001",
         queue_number: data.data?.queue_number || data.queue_number || "A-001",
         total: total,
-        payment_method: selectedMethod,
+        payment_method: method,
       };
 
       const hadSpin = hasSpin;
@@ -388,7 +417,7 @@ export default function PaymentPage() {
           {/* Action Button */}
           <div className="w-full pt-2 shrink-0">
             <button
-              onClick={() => method && handleProcessOrder(method)}
+              onClick={() => method && handleInitiateCheckout(method)}
               disabled={isProcessing || !method}
               className="w-full bg-[#b80000] hover:bg-[#940000] text-[#ffde59] py-3.5 sm:py-4 px-6 rounded-2xl text-base sm:text-xl font-black shadow-xl shadow-red-900/20 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2.5 border-2 border-[#ffde59]"
             >
@@ -415,6 +444,115 @@ export default function PaymentPage() {
           </div>
         </div>
       </div>
+
+      {/* 👤 FULL-SCREEN POPUP MODAL NAMA & NO TELEPON PEMESAN */}
+      <AnimatePresence>
+        {isCustomerModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <motion.div
+              initial={{ scale: 0.85, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.85, opacity: 0 }}
+              transition={{ type: "spring", damping: 24, stiffness: 300 }}
+              className="bg-white rounded-[2.5rem] shadow-2xl p-6 sm:p-8 max-w-lg w-full text-left border-4 border-[#ffde59] relative overflow-hidden flex flex-col"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setIsCustomerModalOpen(false)}
+                className="absolute top-5 right-5 w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center font-black transition-all active:scale-90"
+              >
+                <X size={20} />
+              </button>
+
+              {/* Brand Top Header Badge */}
+              <div className="flex items-center gap-2 bg-amber-50 px-3.5 py-1.5 rounded-full border border-amber-200 w-fit mb-4">
+                <div className="w-6 h-6 p-0.5 bg-white rounded-md border border-[#ffde59] flex items-center justify-center">
+                  <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+                </div>
+                <span className="text-xs font-black text-gray-900 tracking-tight">
+                  TITIK<span className="text-[#b80000]">NGUNYAH</span>
+                </span>
+                <span className="text-[10px] font-bold text-[#b80000] uppercase tracking-wider">• Konfirmasi Data</span>
+              </div>
+
+              {/* Title & Subtitle */}
+              <h3 className="text-2xl sm:text-3xl font-black text-gray-900 leading-tight">
+                Siapa Namamu? 👋
+              </h3>
+              <p className="text-gray-500 text-xs sm:text-sm font-medium mt-1 mb-6">
+                Nama akan ditampilkan di layar antrean dapur saat pesananmu dipersiapkan.
+              </p>
+
+              {/* Input Form */}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleConfirmAndProcess();
+                }}
+                className="space-y-4"
+              >
+                {/* 1. Nama Pemesan (AutoFocused) */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <User size={15} className="text-[#b80000]" />
+                    Nama Lengkap / Panggilan <span className="text-[#b80000]">*Wajib/Jelas</span>
+                  </label>
+                  <input
+                    type="text"
+                    autoFocus
+                    required
+                    value={inputName}
+                    onChange={(e) => setInputName(e.target.value)}
+                    placeholder="Contoh: Dhani / Siti (Pre-order)"
+                    className="w-full bg-amber-50/60 border-2 border-amber-200 focus:border-[#b80000] rounded-2xl px-4 py-3.5 text-base font-black text-gray-900 placeholder:text-gray-400 placeholder:font-normal focus:outline-none focus:ring-4 focus:ring-red-100 transition-all shadow-inner"
+                    maxLength={40}
+                  />
+                </div>
+
+                {/* 2. No Telepon / WhatsApp (Opsional) */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black text-gray-800 uppercase tracking-wider flex items-center justify-between">
+                    <span className="flex items-center gap-1.5 text-emerald-700">
+                      <Phone size={15} />
+                      No. WhatsApp / HP
+                    </span>
+                    <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-md">
+                      Opsional
+                    </span>
+                  </label>
+                  <input
+                    type="tel"
+                    value={inputPhone}
+                    onChange={(e) => setInputPhone(e.target.value)}
+                    placeholder="Contoh: 08123456789 (Bisa dikosongkan)"
+                    className="w-full bg-gray-50 border-2 border-gray-200 focus:border-emerald-600 rounded-2xl px-4 py-3 text-sm font-bold text-gray-900 placeholder:text-gray-400 placeholder:font-normal focus:outline-none focus:ring-4 focus:ring-emerald-100 transition-all shadow-inner"
+                    maxLength={20}
+                  />
+                </div>
+
+                {/* Action Buttons */}
+                <div className="pt-3 space-y-2">
+                  <button
+                    type="submit"
+                    className="w-full bg-[#b80000] hover:bg-[#940000] text-[#ffde59] py-4 rounded-2xl font-black text-base sm:text-lg shadow-xl shadow-red-900/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 border-2 border-[#ffde59]"
+                  >
+                    <span>Lanjut & Buat Pesanan</span>
+                    <ArrowRight size={20} />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleConfirmAndProcess("Pelanggan Kiosk", "")}
+                    className="w-full py-2.5 text-xs font-bold text-gray-400 hover:text-gray-700 transition-colors"
+                  >
+                    Lewati (Pesan Tanpa Nama)
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* 🎡 LUCKY SPIN WHEEL MODAL */}
       <SpinWheelModal

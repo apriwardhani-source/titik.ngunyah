@@ -23,6 +23,7 @@ export interface Order {
   time: string;
   createdAt: number;
   db_id?: number; // Internal ID
+  customer_phone?: string | null;
   customer_photo?: string | null;
   spin_reward?: string | null;
   has_spin?: boolean;
@@ -55,17 +56,22 @@ export const useOrderStore = create<OrderState>()(
 
         // Optimistic UI update
         set((state) => ({
-          orders: state.orders.map((o) => (o.id === id ? { ...o, status } : o)),
+          orders: state.orders.map((o) =>
+            o.id === id || String(o.db_id) === String(id) ? { ...o, status } : o
+          ),
         }));
 
         try {
-          const order = get().orders.find((o) => o.id === id);
-          if (order && order.db_id) {
-            await fetch(`${getApiUrl()}/orders/${order.db_id}/status`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ status: backendStatus }),
-            });
+          const order = get().orders.find(
+            (o) => o.id === id || String(o.db_id) === String(id)
+          );
+          const targetId = order?.db_id || id;
+          const res = await fetch(`${getApiUrl()}/orders/${targetId}/status`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: backendStatus }),
+          });
+          if (res.ok) {
             get().fetchOrders(); // Refetch after updating
           }
         } catch (error) {
@@ -73,17 +79,23 @@ export const useOrderStore = create<OrderState>()(
         }
       },
       deleteOrder: async (id) => {
-        const order = get().orders.find((o) => o.id === id);
+        const order = get().orders.find(
+          (o) => o.id === id || String(o.db_id) === String(id)
+        );
+        const targetId = order?.db_id || id;
+
         // Optimistic delete
         set((state) => ({
-          orders: state.orders.filter((o) => o.id !== id),
+          orders: state.orders.filter(
+            (o) => o.id !== id && String(o.db_id) !== String(id)
+          ),
         }));
 
         try {
-          if (order && order.db_id) {
-            await fetch(`${getApiUrl()}/orders/${order.db_id}`, {
-              method: 'DELETE',
-            });
+          const res = await fetch(`${getApiUrl()}/orders/${targetId}`, {
+            method: 'DELETE',
+          });
+          if (res.ok) {
             get().fetchOrders();
           }
         } catch (error) {
@@ -141,6 +153,7 @@ export const useOrderStore = create<OrderState>()(
                 time,
                 createdAt: new Date(order.created_at).getTime(),
                 db_id: order.id,
+                customer_phone: order.customer_phone || null,
                 customer_photo: order.customer_photo || null,
                 spin_reward: order.spin_reward || null,
                 has_spin: Boolean(order.has_spin),

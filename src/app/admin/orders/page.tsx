@@ -49,6 +49,7 @@ export default function OrdersPage() {
   // State Modal Catat Pre-Order / Manual
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [manualCustomerName, setManualCustomerName] = useState("");
+  const [manualCustomerPhone, setManualCustomerPhone] = useState("");
   const [manualNotes, setManualNotes] = useState("");
   const [manualPaymentMethod, setManualPaymentMethod] = useState<"cash" | "qris">("cash");
   const [manualInitialStatus, setManualInitialStatus] = useState<"waiting_payment" | "waiting_for_kitchen" | "preparing">("waiting_for_kitchen");
@@ -188,6 +189,7 @@ export default function OrdersPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customer_name: manualCustomerName.trim() || "Pre-Order Stand",
+          customer_phone: manualCustomerPhone.trim() || null,
           customer_photo: null,
           payment_method: manualPaymentMethod,
           has_spin: false,
@@ -214,6 +216,7 @@ export default function OrdersPage() {
       // Reset form
       setManualCart({});
       setManualCustomerName("");
+      setManualCustomerPhone("");
       setManualNotes("");
       setIsManualModalOpen(false);
     } catch (err: any) {
@@ -465,6 +468,11 @@ export default function OrdersPage() {
                       <span className="flex items-center gap-1.5 font-black text-sm text-gray-900 truncate">
                         <User size={15} className={isCustom ? "text-[#b80000]" : "text-gray-400"} />
                         <span className="truncate">{order.customer}</span>
+                        {order.customer_phone && (
+                          <span className="text-emerald-700 font-bold text-xs bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded-md shrink-0">
+                            📱 {order.customer_phone}
+                          </span>
+                        )}
                         {isCustom && (
                           <span className="bg-[#ffde59] text-[#b80000] text-[9px] font-black px-2 py-0.5 rounded-full border border-amber-300 shrink-0 uppercase tracking-wider">
                             Pre-Order / Khusus
@@ -674,6 +682,9 @@ export default function OrdersPage() {
                             </div>
                             <div>
                               <p className="font-bold text-gray-900 leading-tight">{order.customer}</p>
+                              {order.customer_phone && (
+                                <p className="text-[11px] text-emerald-700 font-bold">📱 {order.customer_phone}</p>
+                              )}
                               {isCustom ? (
                                 <span className="text-[10px] text-[#b80000] font-black bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 inline-block mt-0.5 uppercase tracking-wider">
                                   Pre-Order
@@ -794,19 +805,34 @@ export default function OrdersPage() {
               )}
 
               <form onSubmit={handleCreateManualOrder} className="space-y-4 flex-1 flex flex-col">
-                {/* Nama Pelanggan / Pre-order */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-black text-gray-700 uppercase tracking-wider block">
-                    Nama Pemesan / Pre-Order <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Contoh: Bu Ani (Pre-Order 12:30)"
-                    value={manualCustomerName}
-                    onChange={(e) => setManualCustomerName(e.target.value)}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#b80000] focus:border-transparent transition-all"
-                  />
+                {/* Nama Pelanggan / Pre-order & WhatsApp */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-black text-gray-700 uppercase tracking-wider block">
+                      Nama Pemesan <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Contoh: Bu Ani (Pre-Order)"
+                      value={manualCustomerName}
+                      onChange={(e) => setManualCustomerName(e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#b80000] focus:border-transparent transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-black text-gray-700 uppercase tracking-wider block">
+                      No. WhatsApp / HP (Opsional)
+                    </label>
+                    <input
+                      type="tel"
+                      placeholder="Contoh: 08123456789"
+                      value={manualCustomerPhone}
+                      onChange={(e) => setManualCustomerPhone(e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#b80000] focus:border-transparent transition-all"
+                    />
+                  </div>
                 </div>
 
                 {/* Pilih Menu & Quantity */}
@@ -1003,9 +1029,15 @@ export default function OrdersPage() {
 
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Waktu Pemesanan:</span>
-                  <span className="font-bold text-gray-800">{selectedOrder.time}</span>
+                  <span className="text-gray-500">Nama Pelanggan:</span>
+                  <span className="font-bold text-gray-800">{selectedOrder.customer}</span>
                 </div>
+                {selectedOrder.customer_phone && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">No. WhatsApp / HP:</span>
+                    <span className="font-bold text-emerald-700">📱 {selectedOrder.customer_phone}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Metode Pembayaran:</span>
                   <span className="font-bold text-gray-800">{selectedOrder.payment}</span>

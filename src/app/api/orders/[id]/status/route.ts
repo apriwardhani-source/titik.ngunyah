@@ -19,8 +19,8 @@ export async function PUT(
 
     const pool = getDbPool();
     await pool.query(
-      'UPDATE orders SET order_status = ?, updated_at = NOW() WHERE id = ?',
-      [status, id]
+      'UPDATE orders SET order_status = ?, updated_at = NOW() WHERE id = ? OR queue_number = ? OR order_number = ?',
+      [status, id, id, id]
     );
 
     return NextResponse.json({

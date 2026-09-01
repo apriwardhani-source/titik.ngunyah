@@ -48,6 +48,7 @@ export async function GET() {
       order_number: order.order_number,
       queue_number: order.queue_number,
       customer_name: order.customer_name,
+      customer_phone: order.customer_phone || null,
       customer_photo: order.customer_photo || null,
       spin_reward: order.spin_reward || null,
       has_spin: Boolean(order.has_spin),

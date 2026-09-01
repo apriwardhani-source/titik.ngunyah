@@ -8,6 +8,7 @@ export async function POST(request: Request) {
     const { 
       items, 
       customer_name = 'Guest', 
+      customer_phone = null,
       payment_method = 'qris', 
       customer_photo = null,
       has_spin = false,
@@ -81,13 +82,14 @@ export async function POST(request: Request) {
       const orderStatus = payment_method === 'cash' ? 'waiting_payment' : 'waiting_for_kitchen';
       const paymentStatus = payment_method === 'cash' ? 'pending' : 'paid';
 
-      // 3. Insert into orders table with customer_photo, spin_reward, has_spin
+      // 3. Insert into orders table with customer_photo, customer_phone, spin_reward, has_spin
       const [orderResult]: any = await connection.query(
-        'INSERT INTO orders (order_number, queue_number, customer_name, customer_photo, spin_reward, has_spin, subtotal, tax, total, payment_method, payment_status, order_status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
+        'INSERT INTO orders (order_number, queue_number, customer_name, customer_phone, customer_photo, spin_reward, has_spin, subtotal, tax, total, payment_method, payment_status, order_status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
         [
           orderNumber, 
           queueNumber, 
           customer_name, 
+          customer_phone,
           customer_photo, 
           spin_reward, 
           has_spin ? 1 : 0, 
