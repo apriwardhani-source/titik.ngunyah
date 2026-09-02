@@ -61,7 +61,16 @@ export async function POST(request: Request) {
 
       for (const item of items) {
         const [menuRows]: any = await connection.query('SELECT price FROM menus WHERE id = ?', [item.menu_id]);
-        const price = menuRows[0] ? Number(menuRows[0].price) : (item.price || 0);
+        const basePrice = menuRows[0] ? Number(menuRows[0].price) : 0;
+        
+        // Use client-provided unit price (which includes custom add-ons like Extra Daging +Rp2.000), or fallback to base price
+        let price = item.price && Number(item.price) > 0 ? Number(item.price) : basePrice;
+        
+        // Extra safeguard: If notes contain Extra Daging but price equals basePrice, add +2000
+        if (item.notes && item.notes.includes("Extra Daging") && price === basePrice && basePrice > 0) {
+          price = basePrice + 2000;
+        }
+
         const itemSubtotal = price * Number(item.qty || 1);
         subtotal += itemSubtotal;
 

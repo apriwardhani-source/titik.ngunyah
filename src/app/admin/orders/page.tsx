@@ -156,7 +156,8 @@ export default function OrdersPage() {
   const calculateManualTotal = () => {
     return Object.entries(manualCart).reduce((sum, [prodId, data]) => {
       const prod = products.find((p) => String(p.id) === prodId);
-      return sum + (prod ? prod.price * data.qty : 0);
+      const extraPrice = data.notes && data.notes.includes("Extra Daging") ? 2000 : 0;
+      return sum + (prod ? (prod.price + extraPrice) * data.qty : 0);
     }, 0);
   };
 
@@ -176,10 +177,11 @@ export default function OrdersPage() {
       const itemsPayload = cartEntries.map(([prodId, data]) => {
         const prod = products.find((p) => String(p.id) === prodId);
         const itemNote = [data.notes, manualNotes].filter(Boolean).join(" | ");
+        const extraPrice = itemNote.includes("Extra Daging") ? 2000 : 0;
         return {
           menu_id: Number(prodId),
           qty: data.qty,
-          price: prod?.price || 0,
+          price: (prod?.price || 0) + extraPrice,
           notes: itemNote || null,
         };
       });
