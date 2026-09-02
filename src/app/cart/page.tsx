@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useCartStore } from "@/store/useCartStore";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,14 +18,44 @@ import {
   Sparkles, 
   Gift, 
   CheckCircle2,
-  User
+  User,
+  Phone,
+  ArrowRight,
+  X
 } from "lucide-react";
 
 export default function CartPage() {
   const router = useRouter();
-  const { items, hasSpin, customerName, setCustomerName, toggleSpin, removeItem, updateQuantity, getTotalPrice } = useCartStore();
+  const { items, hasSpin, customerName, setCustomerName, customerPhone, setCustomerPhone, toggleSpin, removeItem, updateQuantity, getTotalPrice } = useCartStore();
 
   const total = getTotalPrice();
+
+  // Fullscreen Name/Phone Modal
+  const [isNameModalOpen, setIsNameModalOpen] = useState(false);
+  const [inputName, setInputName] = useState(customerName || "");
+  const [inputPhone, setInputPhone] = useState(customerPhone || "");
+
+  const handleProceedClick = () => {
+    setInputName(customerName || "");
+    setInputPhone(customerPhone || "");
+    setIsNameModalOpen(true);
+  };
+
+  const handleConfirmName = () => {
+    const finalName = inputName.trim();
+    if (!finalName) return; // wajib isi
+    setCustomerName(finalName);
+    setCustomerPhone(inputPhone.trim());
+    setIsNameModalOpen(false);
+    router.push("/payment");
+  };
+
+  const handleSkipName = () => {
+    setCustomerName("Pelanggan Kiosk");
+    setCustomerPhone("");
+    setIsNameModalOpen(false);
+    router.push("/payment");
+  };
 
   if (items.length === 0) {
     return (
@@ -233,25 +264,26 @@ export default function CartPage() {
             </div>
           )}
 
-          {/* Form Input Nama Pemesan (Opsional / Pre-Order) */}
-          <div className="bg-amber-50/80 p-3 sm:p-3.5 rounded-2xl border-2 border-amber-200 space-y-1.5 shadow-inner">
-            <label className="text-[11px] font-black text-gray-800 flex items-center justify-between uppercase tracking-wider">
-              <span className="flex items-center gap-1.5 text-[#b80000]">
-                <User size={14} /> Nama Pemesan
-              </span>
-              <span className="text-gray-400 font-bold normal-case text-[10px] bg-white px-2 py-0.5 rounded-md border border-amber-200">
-                Opsional
-              </span>
-            </label>
-            <input
-              type="text"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-              placeholder="Ketik namamu / Pre-order..."
-              className="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-900 placeholder:text-gray-400 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-[#b80000] focus:border-transparent transition-all"
-              maxLength={40}
-            />
-          </div>
+          {/* Customer name preview (if already set) */}
+          {customerName && customerName !== "Pelanggan Kiosk" && (
+            <div className="bg-amber-50/80 p-3 rounded-2xl border-2 border-amber-200 flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-[#b80000] text-[#ffde59] flex items-center justify-center font-black text-sm shrink-0">
+                {customerName.substring(0, 2).toUpperCase()}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-black text-gray-900 truncate">{customerName}</p>
+                {customerPhone && (
+                  <p className="text-[11px] text-emerald-700 font-bold">📱 {customerPhone}</p>
+                )}
+              </div>
+              <button
+                onClick={() => { setInputName(customerName); setInputPhone(customerPhone); setIsNameModalOpen(true); }}
+                className="ml-auto text-[10px] font-bold text-[#b80000] bg-white px-2 py-1 rounded-lg border border-red-200 hover:bg-red-50 transition-colors shrink-0"
+              >
+                Ubah
+              </button>
+            </div>
+          )}
 
           <div className="h-px bg-gray-100 my-0.5" />
           <div className="flex justify-between items-baseline">
@@ -263,7 +295,7 @@ export default function CartPage() {
         {/* Proceed Button */}
         <div className="p-3.5 sm:p-5 md:p-6 lg:p-8 bg-amber-50/50 border-t border-amber-100 shrink-0">
           <button
-            onClick={() => router.push("/payment")}
+            onClick={handleProceedClick}
             className="w-full bg-[#b80000] hover:bg-[#940000] text-[#ffde59] py-3.5 sm:py-4 md:py-5 rounded-2xl text-lg sm:text-xl md:text-2xl font-black shadow-xl shadow-red-900/20 transition-all hover:scale-[1.02] active:scale-[0.98] border-2 border-[#ffde59] flex items-center justify-center gap-2"
           >
             <span>Lanjut ke Pembayaran</span>
@@ -271,6 +303,115 @@ export default function CartPage() {
           </button>
         </div>
       </div>
+
+      {/* 👤 FULL-SCREEN POPUP MODAL NAMA & NO TELEPON */}
+      <AnimatePresence>
+        {isNameModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <motion.div
+              initial={{ scale: 0.85, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.85, opacity: 0 }}
+              transition={{ type: "spring", damping: 24, stiffness: 300 }}
+              className="bg-white rounded-[2.5rem] shadow-2xl p-6 sm:p-8 max-w-lg w-full text-left border-4 border-[#ffde59] relative overflow-hidden flex flex-col"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setIsNameModalOpen(false)}
+                className="absolute top-5 right-5 w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center font-black transition-all active:scale-90"
+              >
+                <X size={20} />
+              </button>
+
+              {/* Brand Top Header Badge */}
+              <div className="flex items-center gap-2 bg-amber-50 px-3.5 py-1.5 rounded-full border border-amber-200 w-fit mb-4">
+                <div className="w-6 h-6 p-0.5 bg-white rounded-md border border-[#ffde59] flex items-center justify-center">
+                  <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+                </div>
+                <span className="text-xs font-black text-gray-900 tracking-tight">
+                  TITIK<span className="text-[#b80000]">NGUNYAH</span>
+                </span>
+                <span className="text-[10px] font-bold text-[#b80000] uppercase tracking-wider">• Konfirmasi Data</span>
+              </div>
+
+              {/* Title & Subtitle */}
+              <h3 className="text-2xl sm:text-3xl font-black text-gray-900 leading-tight">
+                Siapa Namamu? 👋
+              </h3>
+              <p className="text-gray-500 text-xs sm:text-sm font-medium mt-1 mb-6">
+                Nama akan ditampilkan di layar antrean dapur saat pesananmu dipersiapkan.
+              </p>
+
+              {/* Input Form */}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleConfirmName();
+                }}
+                className="space-y-4"
+              >
+                {/* 1. Nama Pemesan (AutoFocused, Required) */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <User size={15} className="text-[#b80000]" />
+                    Nama Lengkap / Panggilan <span className="text-[#b80000]">*Wajib</span>
+                  </label>
+                  <input
+                    type="text"
+                    autoFocus
+                    required
+                    value={inputName}
+                    onChange={(e) => setInputName(e.target.value)}
+                    placeholder="Contoh: Dhani / Siti (Pre-order)"
+                    className="w-full bg-amber-50/60 border-2 border-amber-200 focus:border-[#b80000] rounded-2xl px-4 py-3.5 text-base font-black text-gray-900 placeholder:text-gray-400 placeholder:font-normal focus:outline-none focus:ring-4 focus:ring-red-100 transition-all shadow-inner"
+                    maxLength={40}
+                  />
+                </div>
+
+                {/* 2. No Telepon / WhatsApp (Opsional) */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black text-gray-800 uppercase tracking-wider flex items-center justify-between">
+                    <span className="flex items-center gap-1.5 text-emerald-700">
+                      <Phone size={15} />
+                      No. WhatsApp / HP
+                    </span>
+                    <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-md">
+                      Opsional
+                    </span>
+                  </label>
+                  <input
+                    type="tel"
+                    value={inputPhone}
+                    onChange={(e) => setInputPhone(e.target.value)}
+                    placeholder="Contoh: 08123456789 (Bisa dikosongkan)"
+                    className="w-full bg-gray-50 border-2 border-gray-200 focus:border-emerald-600 rounded-2xl px-4 py-3 text-sm font-bold text-gray-900 placeholder:text-gray-400 placeholder:font-normal focus:outline-none focus:ring-4 focus:ring-emerald-100 transition-all shadow-inner"
+                    maxLength={20}
+                  />
+                </div>
+
+                {/* Action Buttons */}
+                <div className="pt-3 space-y-2">
+                  <button
+                    type="submit"
+                    className="w-full bg-[#b80000] hover:bg-[#940000] text-[#ffde59] py-4 rounded-2xl font-black text-base sm:text-lg shadow-xl shadow-red-900/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 border-2 border-[#ffde59]"
+                  >
+                    <span>Lanjut ke Pembayaran</span>
+                    <ArrowRight size={20} />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleSkipName}
+                    className="w-full py-2.5 text-xs font-bold text-gray-400 hover:text-gray-700 transition-colors"
+                  >
+                    Lewati (Pesan Tanpa Nama)
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

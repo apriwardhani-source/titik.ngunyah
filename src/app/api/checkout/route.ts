@@ -33,11 +33,10 @@ export async function POST(request: Request) {
       const randomStr = Math.random().toString(36).substring(2, 6).toUpperCase();
       const orderNumber = `ORD-${dateStr}-${randomStr}`;
 
-      // Fetch the highest/latest queue number today with transaction lock (FOR UPDATE) to prevent duplicates & race conditions
+      // Fetch the highest/latest queue number today (WITA timezone UTC+8) with transaction lock
       const [lastOrderRows]: any = await connection.query(
         `SELECT queue_number FROM orders 
-         WHERE DATE(created_at) = CURDATE() 
-            OR DATE(CONVERT_TZ(created_at, '+00:00', '+07:00')) = DATE(CONVERT_TZ(NOW(), '+00:00', '+07:00'))
+         WHERE DATE(CONVERT_TZ(created_at, '+00:00', '+08:00')) = DATE(CONVERT_TZ(NOW(), '+00:00', '+08:00'))
          ORDER BY id DESC LIMIT 1 FOR UPDATE`
       );
 
@@ -49,7 +48,7 @@ export async function POST(request: Request) {
         } else {
           // If queue number is not in A-XXX format, count today's records as fallback
           const [countResult]: any = await connection.query(
-            'SELECT COUNT(*) as count FROM orders WHERE DATE(created_at) = CURDATE()'
+            "SELECT COUNT(*) as count FROM orders WHERE DATE(CONVERT_TZ(created_at, '+00:00', '+08:00')) = DATE(CONVERT_TZ(NOW(), '+00:00', '+08:00'))"
           );
           queueIndex = (countResult[0]?.count || 0) + 1;
         }
